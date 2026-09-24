@@ -33,7 +33,7 @@ export const projects: Project[] = [
     date: "2024.05",
     tags: ["Next.js", "React", "Tailwind"],
     category: "web",
-    url: "https://gitee.com/your-name/moyublog",
+    url: "https://github.com/heimuchuan/MoyuBlog",
     span: "lg",
   },
   {
