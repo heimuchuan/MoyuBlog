@@ -1,26 +1,198 @@
 @import "tailwindcss";
 
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* 锐字奥胜拼搏简：工业黑体，用于中文做旧标题 */
+@font-face {
+  font-family: "REEJI-PinboGB";
+  src: url("/fonts/锐字奥运精神拼搏简-闪 常规(REEJI-PinboGB-Flash-Regular).ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #eef0fb;
+  --foreground: #18181b;
+  /* 弹幕：浅色模式淡蓝（发光为透明，保证可插值过渡） */
+  --danmaku-color: rgba(173, 216, 230, 0.15);
+  --danmaku-glow: 0 0 0px rgba(173, 216, 230, 0);
+}
+
+.dark {
+  --background: #09090c;
+  --foreground: #ececec;
+  --danmaku-color: rgba(173, 216, 230, 0.6);
+  --danmaku-glow: 0 0 8px rgba(173, 216, 230, 0.9);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* 不设全局 scroll-behavior: smooth，避免覆盖 JS 的 behavior: "instant"
+   需要平滑滚动的地方（如回到顶部）由 JS 显式传 behavior: "smooth" */
+
+/* 隐藏滚动条（用于歌单标签 / 歌曲列表） */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.7s ease, color 0.7s ease;
+}
+
+/* 隐藏页面主滚动条（保留滚动功能） */
+html,
+body {
+  scrollbar-width: none; /* Firefox */
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none; /* Chrome / Safari / Edge */
+}
+
+/* 主题切换水波纹：从点击处向外扩散的半透明圆形，扩散并淡出 */
+@keyframes ripple-ring {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.4;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+
+/* 玻璃拟态通用卡片：渐变半透明 + 强背景模糊 + 半透明边框 + 顶部高光 */
+.glass {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.36));
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow:
+    0 8px 32px rgba(30, 30, 60, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.dark .glass {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* 悬浮宠物动画 */
+@keyframes pet-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+/* 宠物呼吸光晕：柔和放大 + 亮度律动 */
+@keyframes pet-halo {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 0.85;
+  }
+}
+
+/* 宠物待机：上下浮动 + 轻微放大（呼吸感） */
+@keyframes pet-idle {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-7px) scale(1.05);
+  }
+}
+
+@keyframes pet-blink {
+  0%,
+  90%,
+  100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.08);
+  }
+}
+
+.pet-eye {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* 背景流动弹幕：从屏幕右侧飘向左侧，循环不息 */
+@keyframes danmaku-flow {
+  from {
+    transform: translateX(105vw);
+  }
+  to {
+    transform: translateX(-130%);
+  }
+}
+
+/* 末世废土工业风：钢铁蓝灰做旧文字（冷金属底 + 多层错位阴影模拟斑驳刮擦） */
+.rust-text {
+  color: #5d7a8a;
+  text-shadow:
+    1px 1px 0 rgba(20, 40, 55, 0.55),
+    -1px 0 0 rgba(210, 230, 240, 0.28),
+    2px 2px 3px rgba(10, 25, 35, 0.4),
+    0 0 1px rgba(70, 105, 125, 0.6);
+}
+
+/* 布局切换入场：淡入 + 轻微上移 + 微缩放，搭配交错延迟形成层次感 */
+@keyframes layout-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 歌词卡律动柱状图：竖条柔和呼吸，整体缓慢起伏 */
+@keyframes equalizer-bar {
+  0%,
+  100% {
+    transform: scaleY(0.5);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+/* 末世废土工业风：中文工业黑体 + 做旧阴影（数字同款工业感，中文回退用） */
+.industrial-zh {
+  font-family: "REEJI-PinboGB", "SimHei", "黑体", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: #5d7a8a;
+  text-shadow:
+    1px 1px 0 rgba(20, 40, 55, 0.4),
+    2px 2px 3px rgba(10, 25, 35, 0.3);
 }

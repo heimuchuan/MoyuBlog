@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MoyuBlog
 
-## Getting Started
+> 个人摸鱼博客 · 玻璃拟态 + 工业废土风 · Next.js 全栈实践
 
-First, run the development server:
+一个集入口导航、文章、项目、音乐歌单、歌词联动、悬浮宠物、背景轮播、10 秒清屏彩蛋、RAG 智能问答于一体的个人博客系统。前端走玻璃拟态 + 工业废土时间显示，后端用 Prisma + PostgreSQL，RAG 基于 SiliconFlow（BAAI/bge-m3 嵌入 + DeepSeek-V3 对话）。
+
+## 技术栈
+
+- **框架**：Next.js 16 (App Router) + React 19
+- **语言**：TypeScript
+- **样式**：Tailwind CSS v4（玻璃拟态 + 工业废土风时间显示）
+- **ORM**：Prisma 6
+- **数据库**：PostgreSQL 18（本地）
+- **认证**：NextAuth (Auth.js)
+- **RAG**：SiliconFlow（BAAI/bge-m3 嵌入 + deepseek-ai/DeepSeek-V3 对话）
+- **文档解析**：pdfjs-dist（PDF）+ mammoth（docx）
+- **字体**：Black Ops One（工业风数字）+ 锐字奥运精神拼搏简-闪（工业风中文）
+
+## 功能模块
+
+- **首页**：便当盒布局（矩阵网格 / 中枢链路两种可切换），欢迎卡 + 音乐播放器 + 歌词卡 + 时间技术栈卡 + 六个入口卡
+- **文章**：列表 / 详情，Markdown 渲染 + 代码高亮，分类与标签筛选
+- **项目**：卡片网格，悬浮放大 + 遮罩加深 + 光斑扫过，点击跳转 GitHub 仓库
+- **音乐**：自动扫描 `public/music` 子文件夹生成歌单，LRC 歌词解析（支持双语），三种播放模式（顺序 / 单曲循环 / 随机）
+- **问答**：悬浮宠物（灰原哀 Q 版）入口，RAG 检索 + 引用来源
+- **后台**：管理员登录，文章 / 分类 / 知识库管理
+- **彩蛋**：10 秒无操作卡片散开清屏 + 双击空白触发；主题切换圆形波纹扩散
+
+## 快速开始
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+pnpm prisma generate
+pnpm prisma db push   # 或 pnpm prisma migrate deploy
+pnpm prisma db seed   # 写入管理员 + 示例文章
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+打开 http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- 管理员：`admin@moyublog.com` / `admin123456`
+- 后台：http://localhost:3000/admin
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 环境变量
 
-## Learn More
+在 `.env` 配置（已被 `.gitignore` 忽略）：
 
-To learn more about Next.js, take a look at the following resources:
+```
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/moyublog?schema=public"
+SILICONFLOW_API_KEY="sk-..."
+SILICONFLOW_BASE_URL="https://api.siliconflow.cn/v1"
+CHAT_MODEL="deepseek-ai/DeepSeek-V3"
+EMBED_MODEL="BAAI/bge-m3"
+AUTH_SECRET="..."
+AUTH_URL="http://localhost:3000"
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 目录结构
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+app/
+├── (public)/         # 前台：首页 / 文章 / 项目 / 音乐 / 说说 / 照片 / 关于 / 问答
+├── admin/            # 后台：登录 + 文章/分类/知识库管理
+└── api/             # 接口：文章 CRUD / 知识库上传 / chat / music
+components/          # Navbar / MusicPlayer / ChatWidget / BackgroundSlideshow ...
+lib/                 # prisma / auth / rag / music / projects
+prisma/              # schema.prisma + seed.mjs
+public/              # 背景图 / 字体 / music 歌单 / 入口卡片图
+```
 
-## Deploy on Vercel
+## 备注
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- 数据库已重建为 `moyublog`（旧 `campusblog` 库可手动删除）。
+- `session/` 目录下是历史开发会话快照（MoyuBlog1.0/2.0/3.0.md），保留原貌仅供参考。

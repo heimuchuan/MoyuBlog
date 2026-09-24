@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 用户（管理员）
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  password  String
+  posts     Post[]
+  createdAt DateTime @default(now())
+}
+
+// 文章
+model Post {
+  id         Int       @id @default(autoincrement())
+  title      String
+  slug       String    @unique
+  content    String // Markdown 原文
+  excerpt    String? // 摘要
+  published  Boolean   @default(false)
+  authorId   Int
+  author     User      @relation(fields: [authorId], references: [id])
+  categoryId Int?
+  category   Category? @relation(fields: [categoryId], references: [id])
+  tags       Tag[]
+  views      Int       @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+// 分类
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  posts Post[]
+}
+
+// 标签
+model Tag {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  posts Post[]
+}
+
+// 知识库文档（上传的原始文件）
+model KnowledgeDoc {
+  id        Int              @id @default(autoincrement())
+  title     String // 文档标题
+  fileName  String // 原始文件名
+  fileType  String // pdf/docx/txt
+  content   String // 解析后的纯文本
+  status    String           @default("pending") // pending/processed/failed
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  chunks    KnowledgeChunk[]
+}
+
+// 文档切片（用于向量检索）
+model KnowledgeChunk {
+  id        Int          @id @default(autoincrement())
+  docId     Int
+  doc       KnowledgeDoc @relation(fields: [docId], references: [id], onDelete: Cascade)
+  content   String // 切片文本
+  embedding Float[] // 向量（double precision[]）
+  createdAt DateTime     @default(now())
+}
+
+// 问答记录
+model QALog {
+  id        Int      @id @default(autoincrement())
+  question  String
+  answer    String
+  sources   String // 引用的文档片段，JSON 格式
+  createdAt DateTime @default(now())
+}
