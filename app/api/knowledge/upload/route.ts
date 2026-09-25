@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
 import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { extractText, chunkText, type FileType } from "@/lib/document";
 import { getEmbedding } from "@/lib/rag";
 import { KNOWLEDGE_DIR, storedName } from "@/lib/knowledge-storage";
+import { saveUpload } from "@/lib/upload-storage";
 
 const TYPE_MAP: Record<string, FileType> = { pdf: "pdf", docx: "docx", txt: "txt" };
 
@@ -42,13 +41,18 @@ export async function POST(req: NextRequest) {
   const chunks = chunkText(text);
   const title = String(form.get("title") || fileName.replace(/\.[^.]+$/, "")).trim();
 
-  // 原始文件留档：先写 storage/knowledge/，写盘成功才建库记录
+  // 原始文件留档：线上存 Vercel Blob，本地写 storage/knowledge/，存成功才建库记录
   const archiveName = storedName(fileType);
-  await mkdir(KNOWLEDGE_DIR, { recursive: true });
-  await writeFile(path.join(KNOWLEDGE_DIR, archiveName), buffer);
+  const stored = await saveUpload({
+    blobPath: `knowledge/${archiveName}`,
+    localDir: KNOWLEDGE_DIR,
+    fileName: archiveName,
+    data: buffer,
+    contentType: file.type || undefined,
+  });
 
   const doc = await prisma.knowledgeDoc.create({
-    data: { title, fileName, storedFileName: archiveName, fileType, content: text, status: "processing" },
+    data: { title, fileName, storedFileName: stored, fileType, content: text, status: "processing" },
   });
 
   try {

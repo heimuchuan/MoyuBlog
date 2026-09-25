@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
+import { photoUrl } from "@/lib/photo-url";
 import { useTilt } from "./useTilt";
 
 export type HomePhoto = { id: number; fileName: string; title: string | null };
@@ -68,7 +69,7 @@ export default function PhotosCard({
             {photos.map((p, i) => (
               <img
                 key={p.id}
-                src={`/uploads/photos/${p.fileName}`}
+                src={photoUrl(p.fileName)}
                 alt={p.title || "照片"}
                 className="absolute inset-0 h-full w-full object-cover object-[50%_25%]"
                 style={{

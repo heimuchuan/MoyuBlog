@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { photoUrl } from "@/lib/photo-url";
 
 // 照片随上传实时变化，禁止静态化缓存
 export const dynamic = "force-dynamic";
@@ -20,13 +21,13 @@ export default async function PhotosPage() {
           {photos.map((p) => (
             <a
               key={p.id}
-              href={`/uploads/photos/${p.fileName}`}
+              href={photoUrl(p.fileName)}
               target="_blank"
               rel="noopener noreferrer"
               className="group mb-4 block overflow-hidden rounded-2xl border border-white/35 shadow-lg dark:border-white/10"
             >
               <img
-                src={`/uploads/photos/${p.fileName}`}
+                src={photoUrl(p.fileName)}
                 alt={p.title || "照片"}
                 className="w-full transition duration-500 group-hover:scale-105"
               />

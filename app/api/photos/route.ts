@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { mkdir, unlink, writeFile } from "fs/promises";
 import path from "path";
 import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { removeUpload, saveUpload } from "@/lib/upload-storage";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "photos");
 const TYPE_EXT: Record<string, string> = {
@@ -13,7 +13,7 @@ const TYPE_EXT: Record<string, string> = {
 };
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 
-// 上传照片（仅管理员）：文件写入 public/uploads/photos/，记录入库
+// 上传照片（仅管理员）：线上存 Vercel Blob，本地存 public/uploads/photos/，记录入库
 export async function POST(req: NextRequest) {
   const session = await getAuthSession(req);
   if (!session?.user?.id) {
@@ -35,12 +35,17 @@ export async function POST(req: NextRequest) {
 
   // 时间戳 + 随机串防重名，保留原扩展名
   const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  await mkdir(UPLOAD_DIR, { recursive: true });
-  await writeFile(path.join(UPLOAD_DIR, fileName), Buffer.from(await file.arrayBuffer()));
+  const stored = await saveUpload({
+    blobPath: `photos/${fileName}`,
+    localDir: UPLOAD_DIR,
+    fileName,
+    data: Buffer.from(await file.arrayBuffer()),
+    contentType: file.type,
+  });
 
   const title = String(form.get("title") || "").trim();
   const photo = await prisma.photo.create({
-    data: { title: title || null, fileName },
+    data: { title: title || null, fileName: stored },
   });
   return NextResponse.json(photo);
 }
@@ -55,7 +60,7 @@ export async function DELETE(req: NextRequest) {
   const { id } = await req.json();
   const photo = await prisma.photo.delete({ where: { id: Number(id) } }).catch(() => null);
   if (photo) {
-    await unlink(path.join(UPLOAD_DIR, photo.fileName)).catch(() => {});
+    await removeUpload(photo.fileName, UPLOAD_DIR);
   }
   return NextResponse.json({ ok: true });
 }

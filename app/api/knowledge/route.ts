@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { unlink } from "fs/promises";
-import path from "path";
 import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { KNOWLEDGE_DIR } from "@/lib/knowledge-storage";
+import { removeUpload } from "@/lib/upload-storage";
 
 // 知识库文档列表（仅管理员）
 export async function GET(req: NextRequest) {
@@ -27,7 +26,7 @@ export async function DELETE(req: NextRequest) {
   const { id } = await req.json();
   const doc = await prisma.knowledgeDoc.delete({ where: { id: Number(id) } }).catch(() => null);
   if (doc?.storedFileName) {
-    await unlink(path.join(KNOWLEDGE_DIR, doc.storedFileName)).catch(() => {});
+    await removeUpload(doc.storedFileName, KNOWLEDGE_DIR);
   }
   return NextResponse.json({ ok: true });
 }

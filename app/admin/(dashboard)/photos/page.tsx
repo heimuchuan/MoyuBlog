@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { photoUrl } from "@/lib/photo-url";
 import PhotoUpload from "@/components/admin/PhotoUpload";
 import PhotoDeleteButton from "@/components/admin/PhotoDeleteButton";
 
@@ -21,7 +22,7 @@ export default async function AdminPhotosPage() {
           {photos.map((p) => (
             <div key={p.id} className="group relative overflow-hidden rounded-2xl">
               <img
-                src={`/uploads/photos/${p.fileName}`}
+                src={photoUrl(p.fileName)}
                 alt={p.title || "照片"}
                 className="h-40 w-full object-cover transition duration-300 group-hover:scale-105"
               />

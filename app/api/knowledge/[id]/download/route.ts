@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readFile } from "fs/promises";
-import path from "path";
 import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { KNOWLEDGE_DIR } from "@/lib/knowledge-storage";
+import { readUpload } from "@/lib/upload-storage";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -26,12 +25,9 @@ export async function GET(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "文件不存在（可能是留档功能上线前上传的旧文档）" }, { status: 404 });
   }
 
-  // 双保险：只取文件名，杜绝路径穿越
-  const filePath = path.join(KNOWLEDGE_DIR, path.basename(doc.storedFileName));
-  let data: Buffer;
-  try {
-    data = await readFile(filePath);
-  } catch {
+  // 统一读取：Blob 引用走代理下载，本地引用读文件（basename 防路径穿越）
+  const data = await readUpload(doc.storedFileName, KNOWLEDGE_DIR);
+  if (!data) {
     return NextResponse.json({ error: "留档文件已丢失" }, { status: 404 });
   }
 
