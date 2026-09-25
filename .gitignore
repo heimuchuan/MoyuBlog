@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 用户本地上传文件（照片 + 知识库留档原文件），不入库
+/public/uploads/
+/storage/

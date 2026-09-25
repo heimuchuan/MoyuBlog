@@ -26,9 +26,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-black/5 bg-white/70 p-8 shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-zinc-900/70">
-        <h1 className="text-xl font-bold">管理后台登录</h1>
+    <div className="relative flex min-h-screen items-center justify-center px-4">
+      {/* 后台背景压暗遮罩 */}
+      <div className="fixed inset-0 -z-10 bg-black/40" />
+      <div className="glass w-full max-w-sm rounded-3xl p-8">
+        <h1 className="industrial-zh text-xl font-bold">MoyuBlog · 登录</h1>
         <p className="mt-1 text-sm text-zinc-500">请使用管理员账号登录</p>
         <form onSubmit={submit} className="mt-6 space-y-4">
           {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
@@ -39,7 +41,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 outline-none focus:border-indigo-400 dark:border-white/10 dark:bg-zinc-900"
+              className="w-full rounded-xl border border-white/20 bg-white/60 px-3 py-2 outline-none focus:border-[#5d7a8a] dark:border-white/10 dark:bg-white/5"
             />
           </div>
           <div>
@@ -49,13 +51,13 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 outline-none focus:border-indigo-400 dark:border-white/10 dark:bg-zinc-900"
+              className="w-full rounded-xl border border-white/20 bg-white/60 px-3 py-2 outline-none focus:border-[#5d7a8a] dark:border-white/10 dark:bg-white/5"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-indigo-500 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-600 disabled:opacity-50"
+            className="w-full rounded-xl bg-[#5d7a8a] py-2.5 text-sm font-medium text-white transition hover:bg-[#4a6470] disabled:opacity-50"
           >
             {loading ? "登录中…" : "登录"}
           </button>

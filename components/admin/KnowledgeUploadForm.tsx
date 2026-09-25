@@ -41,7 +41,7 @@ export default function KnowledgeUploadForm() {
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-400 dark:border-white/10 dark:bg-zinc-900"
+          className="w-full rounded-xl border border-white/20 bg-white/60 px-3 py-2 text-sm outline-none focus:border-[#5d7a8a] dark:border-white/10 dark:bg-white/5"
         />
       </div>
       <div>
@@ -57,7 +57,7 @@ export default function KnowledgeUploadForm() {
         <button
           type="submit"
           disabled={uploading}
-          className="rounded-xl bg-indigo-500 px-5 py-2 text-sm text-white transition hover:bg-indigo-600 disabled:opacity-50"
+          className="rounded-xl bg-[#5d7a8a] px-5 py-2 text-sm text-white transition hover:bg-[#4a6470] disabled:opacity-50"
         >
           {uploading ? "上传并向量化中…" : "上传"}
         </button>

@@ -1,14 +1,24 @@
-import OpenAI from "openai";
+import type OpenAI from "openai";
 
-const baseURL = process.env.SILICONFLOW_BASE_URL || "https://api.siliconflow.cn/v1";
-const apiKey = process.env.SILICONFLOW_API_KEY || "";
 const chatModel = process.env.CHAT_MODEL || "deepseek-ai/DeepSeek-V3";
 const embedModel = process.env.EMBED_MODEL || "BAAI/bge-m3";
 
-const client = new OpenAI({ apiKey, baseURL });
+let clientPromise: Promise<OpenAI> | null = null;
+
+async function getClient(): Promise<OpenAI> {
+  if (!clientPromise) {
+    clientPromise = import("openai").then(({ default: OpenAI }) => {
+      const baseURL = process.env.SILICONFLOW_BASE_URL || "https://api.siliconflow.cn/v1";
+      const apiKey = process.env.SILICONFLOW_API_KEY || "";
+      return new OpenAI({ apiKey, baseURL });
+    });
+  }
+  return clientPromise;
+}
 
 // 调嵌入模型把文本转成向量
 export async function getEmbedding(text: string): Promise<number[]> {
+  const client = await getClient();
   const res = await client.embeddings.create({ model: embedModel, input: text });
   return res.data[0].embedding;
 }
@@ -42,6 +52,7 @@ export async function askQuestion(question: string, contexts: Context[]): Promis
 
   const user = `参考资料：\n${refs}\n\n用户问题：${question}\n\n请回答，并在末尾用“参考资料：[序号]”列出你实际引用的资料序号。`;
 
+  const client = await getClient();
   const res = await client.chat.completions.create({
     model: chatModel,
     messages: [

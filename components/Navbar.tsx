@@ -20,7 +20,6 @@ export default function Navbar() {
   const pathname = usePathname();
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [cleared, setCleared] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [ripple, setRipple] = useState<{ x: number; y: number; r: number; color: string; key: number } | null>(null);
 
@@ -35,17 +34,6 @@ export default function Navbar() {
     setTheme(nextDark ? "dark" : "light");
   }
   useEffect(() => setMounted(true), []);
-
-  useEffect(() => {
-    const onClear = () => setCleared(true);
-    const onRestore = () => setCleared(false);
-    window.addEventListener("bg-clear", onClear);
-    window.addEventListener("bg-restore", onRestore);
-    return () => {
-      window.removeEventListener("bg-clear", onClear);
-      window.removeEventListener("bg-restore", onRestore);
-    };
-  }, []);
 
   // 上下滚动收起/展开导航：向下滚过阈值隐藏，向上滚或回到顶部显示
   useEffect(() => {
@@ -64,8 +52,8 @@ export default function Navbar() {
 
   return (
     <header
-      className={`glass sticky top-0 z-40 rounded-none border-x-0 border-t-0 transition-all duration-500 ease-out ${
-        hidden || cleared ? "pointer-events-none -translate-y-full opacity-0" : "translate-y-0 opacity-100"
+      className={`nav-glass transition-all duration-500 ease-out ${
+        hidden ? "pointer-events-none -translate-y-full opacity-0" : "translate-y-0 opacity-100"
       }`}
     >
       <div className="mx-auto flex h-14 w-full max-w-3xl items-center justify-between px-4">

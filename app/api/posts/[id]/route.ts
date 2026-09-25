@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 type Params = { params: Promise<{ id: string }> };
 
 // 更新文章（仅管理员）
 export async function PUT(req: NextRequest, { params }: Params) {
-  const session = await auth();
+  const session = await getAuthSession(req);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "未登录" }, { status: 401 });
   }
@@ -35,8 +35,8 @@ export async function PUT(req: NextRequest, { params }: Params) {
 }
 
 // 删除文章（仅管理员）
-export async function DELETE(_req: NextRequest, { params }: Params) {
-  const session = await auth();
+export async function DELETE(req: NextRequest, { params }: Params) {
+  const session = await getAuthSession(req);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "未登录" }, { status: 401 });
   }

@@ -14,6 +14,7 @@
 }
 
 :root {
+  color-scheme: light;
   --background: #eef0fb;
   --foreground: #18181b;
   /* 弹幕：浅色模式淡蓝（发光为透明，保证可插值过渡） */
@@ -22,6 +23,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --background: #09090c;
   --foreground: #ececec;
   --danmaku-color: rgba(173, 216, 230, 0.6);
@@ -73,23 +75,67 @@ body::-webkit-scrollbar {
   }
 }
 
-/* 玻璃拟态通用卡片：渐变半透明 + 强背景模糊 + 半透明边框 + 顶部高光 */
+/* 全站毛玻璃卡片：50% 透明底 + 背景模糊（毛玻璃核心）+ 极细发光边框 */
 .glass {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.36));
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.5); /* 50% 透明度 */
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  /* 极细发光边框：内侧 1px 细线勾勒轮廓 + 柔和外发光提升立体感 */
   box-shadow:
-    0 8px 32px rgba(30, 30, 60, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 0 10px rgba(255, 255, 255, 0.25),
+    0 8px 32px rgba(30, 30, 60, 0.12);
 }
 
 .dark .glass {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(24, 24, 28, 0.5); /* 暗色 50% 透明底 */
+  border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 0 10px rgba(140, 180, 220, 0.12),
+    0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* 顶部导航栏悬浮毛玻璃：sticky 吸顶 + 圆角悬浮 + 50% 透明 + 背景模糊 + 极细发光边 */
+.nav-glass {
+  position: sticky;
+  top: 12px;
+  z-index: 40;
+  margin: 12px 12px 0; /* 顶部与左右留边，让圆角悬浮出来 */
+  border-radius: 16px; /* 柔和圆角矩形 */
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 0 12px rgba(255, 255, 255, 0.3),
+    0 4px 24px rgba(30, 30, 60, 0.08);
+}
+
+.dark .nav-glass {
+  background: rgba(9, 9, 12, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 12px rgba(140, 180, 220, 0.15),
+    0 4px 24px rgba(0, 0, 0, 0.45);
+}
+
+/* 自定义分类下拉菜单：淡入 + 轻微下滑（替代原生 select 弹层） */
+@keyframes cat-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.cat-menu {
+  animation: cat-menu-in 0.18s ease-out;
 }
 
 /* 悬浮宠物动画 */
@@ -172,6 +218,16 @@ body::-webkit-scrollbar {
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+/* 纯淡入（无位移）：照片轮播标题随图片一起浮出 */
+@keyframes content-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 

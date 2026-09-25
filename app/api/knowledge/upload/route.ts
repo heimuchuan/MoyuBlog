@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { mkdir, writeFile } from "fs/promises";
+import path from "path";
+import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { extractText, chunkText, type FileType } from "@/lib/document";
 import { getEmbedding } from "@/lib/rag";
+import { KNOWLEDGE_DIR, storedName } from "@/lib/knowledge-storage";
 
 const TYPE_MAP: Record<string, FileType> = { pdf: "pdf", docx: "docx", txt: "txt" };
 
 // 上传并向量化知识库文档（仅管理员）
 export async function POST(req: NextRequest) {
-  const session = await auth();
+  const session = await getAuthSession(req);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "未登录" }, { status: 401 });
   }
@@ -39,8 +42,13 @@ export async function POST(req: NextRequest) {
   const chunks = chunkText(text);
   const title = String(form.get("title") || fileName.replace(/\.[^.]+$/, "")).trim();
 
+  // 原始文件留档：先写 storage/knowledge/，写盘成功才建库记录
+  const archiveName = storedName(fileType);
+  await mkdir(KNOWLEDGE_DIR, { recursive: true });
+  await writeFile(path.join(KNOWLEDGE_DIR, archiveName), buffer);
+
   const doc = await prisma.knowledgeDoc.create({
-    data: { title, fileName, fileType, content: text, status: "processing" },
+    data: { title, fileName, storedFileName: archiveName, fileType, content: text, status: "processing" },
   });
 
   try {

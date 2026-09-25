@@ -7,7 +7,14 @@ export default async function CategoryPage({
 }: {
   params: Promise<{ name: string }>;
 }) {
-  const { name } = await params;
+  const { name: rawName } = await params;
+  // 中文分类名经过 URL 传输后是百分号编码，需要解码后再查库
+  let name = rawName;
+  try {
+    name = decodeURIComponent(rawName);
+  } catch {
+    // 非法编码序列时保留原值
+  }
   const category = await prisma.category.findUnique({ where: { name } });
   if (!category) notFound();
 

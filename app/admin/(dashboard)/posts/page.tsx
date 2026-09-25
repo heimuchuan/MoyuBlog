@@ -11,10 +11,10 @@ export default async function AdminPosts() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">文章管理</h1>
+        <h1 className="industrial-zh text-2xl font-bold">文章管理</h1>
         <Link
           href="/admin/posts/new"
-          className="rounded-xl bg-indigo-500 px-4 py-2 text-sm text-white transition hover:bg-indigo-600"
+          className="rounded-xl bg-[#5d7a8a] px-4 py-2 text-sm text-white transition hover:bg-[#4a6470]"
         >
           新建文章
         </Link>
@@ -23,7 +23,7 @@ export default async function AdminPosts() {
       {posts.length === 0 ? (
         <p className="py-16 text-center text-zinc-500">暂无文章</p>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="glass rounded-2xl p-4 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-black/5 text-left text-zinc-500 dark:border-white/10">
@@ -51,7 +51,7 @@ export default async function AdminPosts() {
                   </td>
                   <td className="py-3">
                     <div className="flex items-center gap-3">
-                      <Link href={`/admin/posts/${p.id}/edit`} className="text-indigo-500 hover:underline">
+                      <Link href={`/admin/posts/${p.id}/edit`} className="text-[#5d7a8a] hover:underline">
                         编辑
                       </Link>
                       <DeleteButton url={`/api/posts/${p.id}`} confirmText={`确定删除「${p.title}」吗？`} />

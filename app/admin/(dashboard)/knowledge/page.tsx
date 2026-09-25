@@ -17,9 +17,9 @@ export default async function AdminKnowledge() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold">知识库管理</h1>
+      <h1 className="industrial-zh mb-6 text-2xl font-bold">知识库管理</h1>
 
-      <div className="mb-8 max-w-md rounded-2xl border border-black/5 bg-white/70 p-5 dark:border-white/10 dark:bg-white/5">
+      <div className="glass mb-8 max-w-md rounded-2xl p-5">
         <h2 className="mb-4 text-sm font-semibold">上传文档</h2>
         <KnowledgeUploadForm />
       </div>
@@ -27,7 +27,7 @@ export default async function AdminKnowledge() {
       {docs.length === 0 ? (
         <p className="py-16 text-center text-zinc-500">暂无知识文档</p>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="glass rounded-2xl p-4 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-black/5 text-left text-zinc-500 dark:border-white/10">
@@ -54,11 +54,25 @@ export default async function AdminKnowledge() {
                       {new Date(d.createdAt).toLocaleDateString("zh-CN")}
                     </td>
                     <td className="py-3">
-                      <DeleteButton
-                        url="/api/knowledge"
-                        body={{ id: d.id }}
-                        confirmText={`确定删除「${d.title}」吗？`}
-                      />
+                      <div className="flex items-center gap-3">
+                        {d.storedFileName ? (
+                          <a
+                            href={`/api/knowledge/${d.id}/download`}
+                            className="text-[#5d7a8a] hover:underline"
+                          >
+                            下载原文件
+                          </a>
+                        ) : (
+                          <span className="cursor-not-allowed text-zinc-400" title="留档功能上线前的旧文档，无原文件">
+                            无留档
+                          </span>
+                        )}
+                        <DeleteButton
+                          url="/api/knowledge"
+                          body={{ id: d.id }}
+                          confirmText={`确定删除「${d.title}」吗？将同时删除原文件与全部切片。`}
+                        />
+                      </div>
                     </td>
                   </tr>
                 );

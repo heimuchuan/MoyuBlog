@@ -51,15 +51,16 @@ model Tag {
 
 // 知识库文档（上传的原始文件）
 model KnowledgeDoc {
-  id        Int              @id @default(autoincrement())
-  title     String // 文档标题
-  fileName  String // 原始文件名
-  fileType  String // pdf/docx/txt
-  content   String // 解析后的纯文本
-  status    String           @default("pending") // pending/processed/failed
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-  chunks    KnowledgeChunk[]
+  id             Int              @id @default(autoincrement())
+  title          String // 文档标题
+  fileName       String // 原始文件名（下载时展示）
+  storedFileName String? // 留档文件在 storage/knowledge/ 下的存储名（旧数据可能为空）
+  fileType       String // pdf/docx/txt
+  content        String // 解析后的纯文本
+  status         String           @default("pending") // pending/processed/failed
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  chunks         KnowledgeChunk[]
 }
 
 // 文档切片（用于向量检索）
@@ -79,4 +80,33 @@ model QALog {
   answer    String
   sources   String // 引用的文档片段，JSON 格式
   createdAt DateTime @default(now())
+}
+
+// 照片（照片墙）
+model Photo {
+  id        Int      @id @default(autoincrement())
+  title     String? // 可选标题/描述
+  fileName  String   // 存储文件名（public/uploads/photos/ 下）
+  createdAt DateTime @default(now())
+}
+
+// 说说（短文本碎碎念）
+model Talk {
+  id         Int      @id @default(autoincrement())
+  content    String // 正文（限 500 字）
+  visibility String   @default("public") // public 公开（前台可见）| private 私密（仅后台）
+  createdAt  DateTime @default(now())
+}
+
+// 记账条目（仅后台，独立密码进入）
+model LedgerEntry {
+  id        Int      @id @default(autoincrement())
+  type      String   // expense 支出 | income 收入
+  amount    Int      // 金额（分），避免浮点误差
+  category  String   // 分类 key（见 lib/ledger-categories.ts）
+  note      String   // 备注（自动剔除识别出的日期文字）
+  date      String   // 记账日期 YYYY-MM-DD（本地时区自然日）
+  createdAt DateTime @default(now())
+
+  @@index([date])
 }

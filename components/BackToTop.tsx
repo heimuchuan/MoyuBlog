@@ -4,24 +4,15 @@ import { useEffect, useState } from "react";
 
 export default function BackToTop() {
   const [visible, setVisible] = useState(false);
-  const [cleared, setCleared] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setVisible(window.scrollY > 300);
-    const onClear = () => setCleared(true);
-    const onRestore = () => setCleared(false);
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("bg-clear", onClear);
-    window.addEventListener("bg-restore", onRestore);
     onScroll();
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("bg-clear", onClear);
-      window.removeEventListener("bg-restore", onRestore);
-    };
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const show = visible && !cleared;
+  const show = visible;
 
   return (
     <button

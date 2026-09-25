@@ -15,23 +15,26 @@ export default async function EditPostPage({
     }),
     prisma.category.findMany({ orderBy: { name: "asc" } }),
   ]);
+
   if (!post) notFound();
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold">编辑文章</h1>
-      <PostForm
-        categories={categories}
-        post={{
-          id: post.id,
-          title: post.title,
-          content: post.content,
-          excerpt: post.excerpt || "",
-          published: post.published,
-          categoryId: post.categoryId,
-          tags: post.tags.map((t) => t.name),
-        }}
-      />
+      <h1 className="industrial-zh mb-6 text-2xl font-bold">编辑文章</h1>
+      <div className="glass rounded-2xl p-6">
+        <PostForm
+          categories={categories}
+          post={{
+            id: post.id,
+            title: post.title,
+            content: post.content,
+            excerpt: post.excerpt || "",
+            published: post.published,
+            categoryId: post.categoryId,
+            tags: post.tags.map((t) => t.name),
+          }}
+        />
+      </div>
     </div>
   );
 }

@@ -18,12 +18,12 @@ export default async function AdminDashboard() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">概览</h1>
+      <h1 className="industrial-zh text-2xl font-bold">概览</h1>
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         {stats.map((s) => {
           const inner = (
             <>
-              <div className="text-3xl font-bold">{s.value}</div>
+              <div className="rust-text text-3xl font-bold">{s.value}</div>
               <div className="mt-1 text-sm text-zinc-500">{s.label}</div>
             </>
           );
@@ -31,15 +31,12 @@ export default async function AdminDashboard() {
             <Link
               key={s.label}
               href={s.href}
-              className="rounded-2xl border border-black/5 bg-white/70 p-5 transition hover:shadow-md dark:border-white/10 dark:bg-white/5"
+              className="glass rounded-2xl p-5 transition hover:shadow-lg"
             >
               {inner}
             </Link>
           ) : (
-            <div
-              key={s.label}
-              className="rounded-2xl border border-black/5 bg-white/70 p-5 dark:border-white/10 dark:bg-white/5"
-            >
+            <div key={s.label} className="glass rounded-2xl p-5">
               {inner}
             </div>
           );

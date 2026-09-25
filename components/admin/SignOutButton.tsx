@@ -12,7 +12,7 @@ export default function SignOutButton() {
         router.push("/admin/login");
         router.refresh();
       }}
-      className="rounded-lg border border-black/10 px-3 py-1.5 text-sm transition hover:bg-zinc-100 dark:border-white/10 dark:hover:bg-white/10"
+      className="rounded-lg border border-[#5d7a8a]/40 px-3 py-1.5 text-sm text-[#5d7a8a] transition hover:bg-[#5d7a8a]/10 dark:border-white/20 dark:hover:bg-white/10"
     >
       退出登录
     </button>

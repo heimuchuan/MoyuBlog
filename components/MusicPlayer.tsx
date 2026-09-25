@@ -74,7 +74,11 @@ export default function MusicPlayer({
     setSongListOpen(false);
     requestAnimationFrame(() => {
       const a = audioRef.current;
-      if (a) a.play();
+      if (a) {
+        // src 相同时（单首歌单切上下首）浏览器不会自动重置，需手动归零
+        a.currentTime = 0;
+        a.play();
+      }
       setPlaying(true);
     });
   }
@@ -182,6 +186,7 @@ function prev() {
         )}
       </div>
 
+      {/* 播放键 + 歌名 */}
       <div className="flex items-center gap-3">
         <button
           onClick={toggle}
@@ -190,24 +195,27 @@ function prev() {
         >
           {playing ? <PauseIcon /> : <PlayIcon />}
         </button>
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-medium">
-            {song.title} · <span className="text-zinc-500">{song.artist}</span>
-          </div>
-          <div className="mt-2 flex items-center gap-2">
-            <span className="text-xs tabular-nums text-zinc-500">{fmt(current)}</span>
-            <input
-              type="range"
-              min={0}
-              max={duration || 0}
-              step={0.1}
-              value={current}
-              onChange={seek}
-              className="h-1 flex-1 cursor-pointer accent-indigo-500"
-            />
-            <span className="text-xs tabular-nums text-zinc-500">{fmt(duration)}</span>
-          </div>
+        <div className="min-w-0 flex-1 truncate text-sm font-medium">
+          {song.title} · <span className="text-zinc-500">{song.artist}</span>
         </div>
+      </div>
+
+      {/* 歌曲进度条：独占播放器整行 */}
+      <div className="mt-3 flex items-center gap-2">
+        <span className="w-9 shrink-0 text-right text-xs tabular-nums text-zinc-500">
+          {fmt(current)}
+        </span>
+        <input
+          type="range"
+          min={0}
+          max={duration || 0}
+          step={0.1}
+          value={current}
+          onChange={seek}
+          aria-label="播放进度"
+          className="h-1 min-w-0 flex-1 cursor-pointer accent-indigo-500"
+        />
+        <span className="w-9 shrink-0 text-xs tabular-nums text-zinc-500">{fmt(duration)}</span>
       </div>
 
       <div className="mt-2 flex items-center justify-between border-t border-black/5 pt-2 dark:border-white/10">

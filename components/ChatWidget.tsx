@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Chat from "./Chat";
 
 type PetState = "idle" | "open" | "thinking";
@@ -8,18 +8,6 @@ type PetState = "idle" | "open" | "thinking";
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [thinking, setThinking] = useState(false);
-  const [cleared, setCleared] = useState(false);
-
-  useEffect(() => {
-    const onClear = () => setCleared(true);
-    const onRestore = () => setCleared(false);
-    window.addEventListener("bg-clear", onClear);
-    window.addEventListener("bg-restore", onRestore);
-    return () => {
-      window.removeEventListener("bg-clear", onClear);
-      window.removeEventListener("bg-restore", onRestore);
-    };
-  }, []);
 
   const state: PetState = !open ? "idle" : thinking ? "thinking" : "open";
 
@@ -30,11 +18,9 @@ export default function ChatWidget() {
         onClick={() => setOpen(true)}
         aria-label="打开智能问答"
         className={`glass fixed bottom-24 right-6 z-50 origin-bottom-right rounded-2xl rounded-br-sm px-3 py-2 text-sm text-zinc-700 transition-all duration-500 dark:text-zinc-200 ${
-          cleared
-            ? "pointer-events-none translate-y-4 opacity-0"
-            : open
-              ? "pointer-events-none translate-y-1 opacity-0"
-              : "opacity-100 hover:-translate-y-0.5"
+          open
+            ? "pointer-events-none translate-y-1 opacity-0"
+            : "opacity-100 hover:-translate-y-0.5"
         }`}
       >
         👋 点我，陪你聊聊校园～
@@ -44,9 +30,7 @@ export default function ChatWidget() {
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "关闭智能问答" : "打开智能问答"}
-        className={`group fixed bottom-6 right-6 z-50 transition-all duration-500 hover:scale-105 active:scale-95 ${
-          cleared ? "pointer-events-none translate-y-8 opacity-0" : ""
-        }`}
+        className="group fixed bottom-6 right-6 z-50 transition-all duration-500 hover:scale-105 active:scale-95"
       >
         <span className="relative block">
           {/* 呼吸光晕 */}
@@ -76,11 +60,8 @@ export default function ChatWidget() {
 
       {/* 聊天面板 */}
       {open && (
-        <div
-          className={`glass fixed bottom-24 right-6 z-50 flex h-[520px] w-[360px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl transition-all duration-500 ${
-            cleared ? "pointer-events-none translate-y-8 opacity-0" : ""
-          }`}
-        >
+        <div className="glass fixed bottom-24 right-6 z-50 flex h-[520px] w-[360px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl transition-all duration-500">
+
           <div className="flex items-center justify-between border-b border-black/5 px-4 py-3 dark:border-white/10">
             <span className="text-sm font-semibold">校园智能问答</span>
             <button

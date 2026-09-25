@@ -8,7 +8,14 @@ export default async function PostPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  // 中文 slug 经过 URL 传输后是百分号编码，需要解码后再查库
+  let slug = rawSlug;
+  try {
+    slug = decodeURIComponent(rawSlug);
+  } catch {
+    // 非法编码序列时保留原值
+  }
   const post = await prisma.post.findUnique({
     where: { slug },
     include: { category: true, tags: true, author: { select: { name: true } } },

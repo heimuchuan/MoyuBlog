@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { unlink } from "fs/promises";
+import path from "path";
+import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { KNOWLEDGE_DIR } from "@/lib/knowledge-storage";
 
 // 知识库文档列表（仅管理员）
-export async function GET() {
-  const session = await auth();
+export async function GET(req: NextRequest) {
+  const session = await getAuthSession(req);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "未登录" }, { status: 401 });
   }
@@ -15,13 +18,16 @@ export async function GET() {
   return NextResponse.json(docs);
 }
 
-// 删除知识库文档（仅管理员，级联删除其切片）
+// 删除知识库文档（仅管理员，级联删除其切片 + 删除留档原文件）
 export async function DELETE(req: NextRequest) {
-  const session = await auth();
+  const session = await getAuthSession(req);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "未登录" }, { status: 401 });
   }
   const { id } = await req.json();
-  await prisma.knowledgeDoc.delete({ where: { id: Number(id) } });
+  const doc = await prisma.knowledgeDoc.delete({ where: { id: Number(id) } }).catch(() => null);
+  if (doc?.storedFileName) {
+    await unlink(path.join(KNOWLEDGE_DIR, doc.storedFileName)).catch(() => {});
+  }
   return NextResponse.json({ ok: true });
 }

@@ -22,37 +22,16 @@ const DANMAKU = [
 
 export default function BackgroundSlideshow() {
   const [index, setIndex] = useState(0);
-  const [clear, setClear] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setIndex((i) => (i + 1) % IMAGES.length), INTERVAL);
     return () => clearInterval(timer);
   }, []);
 
-  // 监听首页「清屏 / 恢复」事件：清屏时背景图完全清晰、光斑隐藏
-  useEffect(() => {
-    function onClear() {
-      setClear(true);
-    }
-    function onRestore() {
-      setClear(false);
-    }
-    window.addEventListener("bg-clear", onClear);
-    window.addEventListener("bg-restore", onRestore);
-    return () => {
-      window.removeEventListener("bg-clear", onClear);
-      window.removeEventListener("bg-restore", onRestore);
-    };
-  }, []);
-
   return (
     <>
-      {/* 背景图：清屏时移除透明与模糊 */}
-      <div
-        className={`absolute inset-0 bg-cover transition-all duration-1000 ${
-          clear ? "opacity-100 blur-none" : "opacity-50 blur-[2px] dark:opacity-35"
-        }`}
-      >
+      {/* 背景图：50% 透明 + 模糊；外扩 16px 防止模糊在边缘产生羽化露底 */}
+      <div className="absolute -inset-4 bg-cover opacity-50 blur-[10px] transition-all duration-1000 dark:opacity-35">
         {IMAGES.map((img, i) => (
           <div
             key={img.src}
@@ -66,15 +45,15 @@ export default function BackgroundSlideshow() {
         ))}
       </div>
 
-      {/* 彩色光斑：清屏时淡出，让背景图完全展示 */}
-      <div className={`absolute inset-0 transition-opacity duration-1000 ${clear ? "opacity-0" : "opacity-100"}`}>
+      {/* 彩色光斑 */}
+      <div className="absolute inset-0">
         <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-indigo-300/40 blur-3xl dark:bg-indigo-600/20" />
         <div className="absolute right-[-10%] top-1/4 h-80 w-80 rounded-full bg-pink-300/40 blur-3xl dark:bg-pink-600/20" />
         <div className="absolute bottom-[-10%] left-1/3 h-96 w-96 rounded-full bg-sky-300/30 blur-3xl dark:bg-purple-600/20" />
       </div>
 
-      {/* 流动弹幕：清屏时淡出 */}
-      <div className={`absolute inset-0 overflow-hidden transition-opacity duration-1000 ${clear ? "opacity-0" : "opacity-100"}`}>
+      {/* 流动弹幕 */}
+      <div className="absolute inset-0 overflow-hidden">
         {DANMAKU.map((d) => (
           <span
             key={d.text}
