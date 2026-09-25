@@ -36,7 +36,7 @@ export default function ArticleFeaturedCard({
       >
         <div className="hidden w-2/5 shrink-0 sm:block">
           <img
-            src="/枯荣.jpg"
+            src="/wither-bloom.jpg"
             alt="文章"
             className="h-full max-h-44 w-full object-cover object-[50%_25%] transition-transform duration-500 group-hover:scale-105"
           />
@@ -57,7 +57,7 @@ export default function ArticleFeaturedCard({
     >
       <div className="hidden w-2/5 shrink-0 overflow-hidden sm:block">
         <img
-          src="/枯荣.jpg"
+          src="/wither-bloom.jpg"
           alt={post.title}
           className="h-full max-h-44 w-full object-cover object-[50%_25%] transition-transform duration-500 group-hover:scale-105"
         />

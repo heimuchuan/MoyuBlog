@@ -22,9 +22,9 @@ const techStack = ["Next.js", "React", "TypeScript", "Tailwind", "Prisma", "Post
 
 // 右侧中间：3 个小缩略图入口
 const miniEntries: MiniEntry[] = [
-  { href: "/posts", label: "文章", img: "/枯荣.jpg" },
-  { href: "/music", label: "音乐", img: "/休息.jpg" },
-  { href: "/projects", label: "项目", img: "/瞄准.jpg" },
+  { href: "/posts", label: "文章", img: "/wither-bloom.jpg" },
+  { href: "/music", label: "音乐", img: "/rest.jpg" },
+  { href: "/projects", label: "项目", img: "/aiming.jpg" },
 ];
 
 export default function HomePage() {
@@ -83,7 +83,7 @@ export default function HomePage() {
               <div className="flex flex-col gap-4">
                 <div className="flex items-stretch gap-5">
                   <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl">
-                    <img src="/个人照片.jpg" alt="头像" className="h-full w-full object-cover" />
+                    <img src="/avatar.jpg" alt="头像" className="h-full w-full object-cover" />
                   </div>
                   <div className="flex flex-col justify-center">
                     <div className="text-2xl font-bold tracking-tight">Relief</div>
@@ -107,7 +107,7 @@ export default function HomePage() {
             <div className="glass flex h-full flex-col justify-center rounded-3xl p-6">
               <div className="mb-3 flex items-center gap-3">
                 <div className="h-11 w-11 shrink-0 overflow-hidden rounded-xl">
-                  <img src="/听歌.jpg" alt="歌词配图" className="h-full w-full object-cover" />
+                  <img src="/listening.jpg" alt="歌词配图" className="h-full w-full object-cover" />
                 </div>
                 <span className="flex items-center gap-1.5 text-sm font-semibold text-zinc-500">
                   <MusicIcon className="h-4 w-4 text-[#5d7a8a]" />

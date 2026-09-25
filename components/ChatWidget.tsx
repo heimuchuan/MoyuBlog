@@ -40,7 +40,7 @@ export default function ChatWidget() {
           />
           {/* 头像 */}
           <img
-            src={state === "open" ? "/表白.jpg" : "/感冒.jpg"}
+            src={state === "open" ? "/confession.jpg" : "/cold.jpg"}
             alt="灰原哀 Q 版宠物"
             className="relative h-16 w-16 rounded-full border-2 border-white/70 object-cover shadow-lg dark:border-white/20"
             style={state === "idle" ? { animation: "pet-idle 3.5s ease-in-out infinite" } : undefined}
