@@ -1,27 +1,58 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import {
+  Home,
+  FolderGit2,
+  FileText,
+  Image as ImageIcon,
+  Music,
+  MessageSquare,
+  User,
+  Sun,
+  Moon,
+  type LucideIcon,
+} from "lucide-react";
 
-const links = [
-  { href: "/", label: "首页" },
-  { href: "/projects", label: "项目" },
-  { href: "/posts", label: "文章" },
-  { href: "/photos", label: "照片" },
-  { href: "/music", label: "音乐" },
-  { href: "/talks", label: "说说" },
-  { href: "/about", label: "关于" },
+const links: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/", label: "首页", icon: Home },
+  { href: "/projects", label: "项目", icon: FolderGit2 },
+  { href: "/posts", label: "文章", icon: FileText },
+  { href: "/photos", label: "照片", icon: ImageIcon },
+  { href: "/music", label: "音乐", icon: Music },
+  { href: "/talks", label: "说说", icon: MessageSquare },
+  { href: "/about", label: "关于", icon: User },
 ];
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
+  const { status } = useSession();
   const [mounted, setMounted] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [ripple, setRipple] = useState<{ x: number; y: number; r: number; color: string; key: number } | null>(null);
+  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // logo 单击回首页、双击进后台（隐蔽入口：登录→/admin，未登录→/admin/login）
+  function handleLogoClick(e: React.MouseEvent<HTMLAnchorElement>) {
+    e.preventDefault();
+    if (clickTimer.current) {
+      clearTimeout(clickTimer.current);
+      clickTimer.current = null;
+      router.push(status === "authenticated" ? "/admin" : "/admin/login");
+    } else {
+      clickTimer.current = setTimeout(() => {
+        clickTimer.current = null;
+        if (pathname !== "/") router.push("/");
+      }, 250);
+    }
+  }
 
   function toggleTheme(e: React.MouseEvent<HTMLButtonElement>) {
     const { clientX, clientY } = e;
@@ -56,36 +87,54 @@ export default function Navbar() {
         hidden ? "pointer-events-none -translate-y-full opacity-0" : "translate-y-0 opacity-100"
       }`}
     >
-      <div className="mx-auto flex h-14 w-full max-w-3xl items-center justify-between px-4">
-        <Link href="/" className="text-base font-bold tracking-tight">
-          Reliefの摸鱼办
+      <div className="mx-auto flex h-14 w-full max-w-3xl items-center justify-between gap-2 px-3 sm:px-4">
+        <Link
+          href="/"
+          onClick={handleLogoClick}
+          className="shrink-0 cursor-pointer truncate text-sm font-bold tracking-tight sm:text-base select-none"
+        >
+          <span className="sm:hidden">Relief</span>
+          <span className="hidden sm:inline">Reliefの摸鱼办</span>
         </Link>
-        <nav className="flex items-center gap-1">
+        <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
+          <nav className="flex items-center gap-0.5 sm:gap-1.5">
           {links.map((l) => {
             const active = l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
+            const Icon = l.icon;
             return (
               <Link
                 key={l.href}
                 href={l.href}
+                aria-label={l.label}
                 className={
-                  "rounded-lg px-3 py-1.5 text-sm transition-colors " +
+                  "relative flex items-center gap-1.5 rounded-xl px-2 py-1.5 text-sm transition-colors sm:px-3 " +
                   (active
-                    ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
+                    ? "bg-violet-500/10 font-medium text-violet-600 dark:bg-violet-400/10 dark:text-violet-300"
                     : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-white/10")
                 }
               >
-                {l.label}
+                <Icon className="h-4 w-4 shrink-0" strokeWidth={2} />
+                <span className="hidden sm:inline">{l.label}</span>
+                {/* 激活态底部小圆点 */}
+                {active && (
+                  <span className="absolute bottom-[3px] left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-violet-500 dark:bg-violet-400" />
+                )}
               </Link>
             );
           })}
           <button
             onClick={toggleTheme}
             aria-label="切换主题"
-            className="ml-2 rounded-lg p-2 text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-white/10"
+            className="ml-1 rounded-xl p-2 text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-white/10 sm:ml-2"
           >
-            {mounted && resolvedTheme === "dark" ? <SunIcon /> : <MoonIcon />}
+            {mounted && resolvedTheme === "dark" ? (
+              <Sun className="h-4 w-4" strokeWidth={2} />
+            ) : (
+              <Moon className="h-4 w-4" strokeWidth={2} />
+            )}
           </button>
-        </nav>
+          </nav>
+        </div>
       </div>
 
       {/* 主题切换水波纹：从点击处向外扩散的半透明圆形，纯装饰不遮屏 */}
@@ -109,22 +158,5 @@ export default function Navbar() {
           document.body
         )}
     </header>
-  );
-}
-
-function SunIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-    </svg>
-  );
-}
-
-function MoonIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-    </svg>
   );
 }

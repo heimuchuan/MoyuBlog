@@ -1,138 +1,28 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { type Playlist } from "@/lib/music";
+import { useMusic } from "@/components/music/MusicContext";
 
-export default function MusicPlayer({
-  playlists,
-  onTimeChange,
-  onSongChange,
-  onPlayingChange,
-}: {
-  playlists: Playlist[];
-  onTimeChange?: (t: number) => void;
-  onSongChange?: (playlistIndex: number, songIndex: number) => void;
-  onPlayingChange?: (playing: boolean) => void;
-}) {
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [playing, setPlaying] = useState(false);
-  const [current, setCurrent] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [playlistIndex, setPlaylistIndex] = useState(0);
-  const [songIndex, setSongIndex] = useState(0);
-  const [plListOpen, setPlListOpen] = useState(false);
-  const [songListOpen, setSongListOpen] = useState(false);
-  const [mode, setMode] = useState<"all" | "one" | "shuffle">("all");
-
-  const pl = playlists[playlistIndex];
-  const song = pl?.songs[songIndex];
-
-  // 歌单/歌曲变化时通知父组件（用于同步歌词）
-  useEffect(() => {
-    onSongChange?.(playlistIndex, songIndex);
-  }, [playlistIndex, songIndex, onSongChange]);
-
-  // 播放状态变化时通知父组件（用于联动歌词卡律动柱状图）
-  useEffect(() => {
-    onPlayingChange?.(playing);
-  }, [playing, onPlayingChange]);
-
-  // playlists 变化时，若索引越界则归零
-  useEffect(() => {
-    if (!playlists.length) {
-      setPlaylistIndex(0);
-      setSongIndex(0);
-      return;
-    }
-    if (playlistIndex >= playlists.length) setPlaylistIndex(0);
-  }, [playlists, playlistIndex]);
+export default function MusicPlayer() {
+  const {
+    songs,
+    currentSong: song,
+    playing,
+    current,
+    duration,
+    mode,
+    toggle,
+    next,
+    prev,
+    seek,
+    cycleMode,
+  } = useMusic();
 
   if (!song) {
     return (
-      <p className="text-sm text-zinc-400 dark:text-zinc-500">
-        歌单还是空的，在 public/music 下建文件夹，每个文件夹就是一个歌单，把 .mp3 和同名 .lrc 丢进去即可
-        自动加载。
-      </p>
+      <div className="flex h-full items-center justify-center">
+        <p className="text-sm text-zinc-400 dark:text-zinc-500">歌单加载中…</p>
+      </div>
     );
-  }
-
-  function toggle() {
-    const a = audioRef.current;
-    if (!a) return;
-    if (playing) a.pause();
-    else a.play();
-    setPlaying(!playing);
-  }
-
-  function playSong(pi: number, si: number) {
-    setPlaylistIndex(pi);
-    setSongIndex(si);
-    setCurrent(0);
-    setDuration(0);
-    setPlaying(false);
-    setPlListOpen(false);
-    setSongListOpen(false);
-    requestAnimationFrame(() => {
-      const a = audioRef.current;
-      if (a) {
-        // src 相同时（单首歌单切上下首）浏览器不会自动重置，需手动归零
-        a.currentTime = 0;
-        a.play();
-      }
-      setPlaying(true);
-    });
-  }
-
-  function selectPlaylist(pi: number) {
-    // 切歌单：从新歌单第一首开始播
-    playSong(pi, 0);
-  }
-function prev() {
-    playSong(playlistIndex, (songIndex - 1 + pl.songs.length) % pl.songs.length);
-  }
-  function next() {
-    if (mode === "shuffle") {
-      // 单曲歌单直接原地重播
-      if (pl.songs.length <= 1) return playSong(playlistIndex, 0);
-      let r = songIndex;
-      while (r === songIndex) r = Math.floor(Math.random() * pl.songs.length);
-      return playSong(playlistIndex, r);
-    }
-    playSong(playlistIndex, (songIndex + 1) % pl.songs.length);
-  }
-
-  function onEnded() {
-    if (mode === "one") {
-      // 单曲循环：当前曲目重播
-      const a = audioRef.current;
-      if (a) {
-        a.currentTime = 0;
-        a.play();
-        setPlaying(true);
-      }
-      return;
-    }
-    next();
-  }
-
-  function cycleMode() {
-    setMode((m) => (m === "all" ? "one" : m === "one" ? "shuffle" : "all"));
-  }
-
-  function onTime(e: React.SyntheticEvent<HTMLAudioElement>) {
-    const a = e.currentTarget;
-    setCurrent(a.currentTime);
-    setDuration(a.duration || 0);
-    onTimeChange?.(a.currentTime);
-  }
-
-  function seek(e: React.ChangeEvent<HTMLInputElement>) {
-    const a = audioRef.current;
-    if (!a) return;
-    const t = Number(e.target.value);
-    a.currentTime = t;
-    setCurrent(t);
-    onTimeChange?.(t);
   }
 
   function fmt(s: number) {
@@ -143,144 +33,118 @@ function prev() {
   }
 
   return (
-    <div className="relative p-1">
-      <audio
-        ref={audioRef}
-        src={song.url}
-        onTimeUpdate={onTime}
-        onLoadedMetadata={onTime}
-        onEnded={onEnded}
-      />
-
-      {/* 歌单名按钮：单独一个下拉选歌单 */}
-      <div className="relative">
-        <button
-          onClick={() => setPlListOpen((v) => !v)}
-          className="mb-2 flex items-center gap-1 rounded-full bg-black/5 px-2.5 py-1 text-xs text-zinc-600 transition hover:bg-black/10 dark:bg-white/10 dark:text-zinc-300 dark:hover:bg-white/20"
-        >
-          <span className="text-zinc-500">🎵</span>
-          <span className="truncate">{pl.name}</span>
-          <CaretIcon />
-        </button>
-
-        {plListOpen && (
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setPlListOpen(false)} />
-            <div className="scrollbar-none absolute left-0 top-full z-50 mt-1 max-h-56 w-48 overflow-y-auto rounded-2xl border border-white/60 bg-white/90 p-1 shadow-2xl backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-900/95">
-              {playlists.map((p, i) => (
-                <button
-                  key={p.name}
-                  onClick={() => selectPlaylist(i)}
-                  className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm transition ${
-                    i === playlistIndex
-                      ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-300"
-                      : "text-zinc-700 hover:bg-black/5 dark:text-zinc-200 dark:hover:bg-white/10"
-                  }`}
-                >
-                  <span className="min-w-0 flex-1 truncate">{p.name}</span>
-                  <span className="text-xs tabular-nums text-zinc-400">{p.songs.length}</span>
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* 播放键 + 歌名 */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={toggle}
-          aria-label={playing ? "暂停" : "播放"}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-indigo-500 text-white transition hover:bg-indigo-600"
-        >
-          {playing ? <PauseIcon /> : <PlayIcon />}
-        </button>
-        <div className="min-w-0 flex-1 truncate text-sm font-medium">
-          {song.title} · <span className="text-zinc-500">{song.artist}</span>
-        </div>
-      </div>
-
-      {/* 歌曲进度条：独占播放器整行 */}
-      <div className="mt-3 flex items-center gap-2">
-        <span className="w-9 shrink-0 text-right text-xs tabular-nums text-zinc-500">
-          {fmt(current)}
-        </span>
-        <input
-          type="range"
-          min={0}
-          max={duration || 0}
-          step={0.1}
-          value={current}
-          onChange={seek}
-          aria-label="播放进度"
-          className="h-1 min-w-0 flex-1 cursor-pointer accent-indigo-500"
-        />
-        <span className="w-9 shrink-0 text-xs tabular-nums text-zinc-500">{fmt(duration)}</span>
-      </div>
-
-      <div className="mt-2 flex items-center justify-between border-t border-black/5 pt-2 dark:border-white/10">
-        <button
-          onClick={prev}
-          aria-label="上一首"
-          className="flex items-center gap-1 rounded-full px-2 py-1 text-xs text-zinc-500 transition hover:bg-black/5 hover:text-zinc-700 dark:hover:bg-white/10 dark:hover:text-zinc-200"
-        >
-          <PrevIcon /> 上一首
-        </button>
-        {/* 播放模式切换：顺序 → 单曲循环 → 随机 */}
-        <button
-          onClick={cycleMode}
-          aria-label={mode === "all" ? "顺序播放" : mode === "one" ? "单曲循环" : "随机播放"}
-          title={mode === "all" ? "顺序播放" : mode === "one" ? "单曲循环" : "随机播放"}
-          className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs transition hover:bg-black/5 hover:text-zinc-700 dark:hover:bg-white/10 dark:hover:text-zinc-200 ${
-            mode === "all" ? "text-zinc-500" : "text-indigo-500"
-          }`}
-        >
-          {mode === "all" ? <RepeatIcon /> : mode === "one" ? <RepeatOneIcon /> : <ShuffleIcon />}
-        </button>
-        {/* 歌曲列表按钮：独立下拉选当前歌单的歌 */}
-        <div className="relative">
-          <button
-            onClick={() => setSongListOpen((v) => !v)}
-            aria-label="歌曲列表"
-            className="flex items-center gap-1 rounded-full px-2 py-1 text-xs text-zinc-500 transition hover:bg-black/5 hover:text-zinc-700 dark:hover:bg-white/10 dark:hover:text-zinc-200"
+    <div className="relative flex h-full flex-col">
+      {/* ── 顶部组：黑胶唱片 + 歌曲信息（靠上） ── */}
+      <div className="flex items-center gap-4">
+        {/* 黑胶唱片（播放时旋转），放大到 80px */}
+        <div className="relative h-20 w-20 shrink-0">
+          <div
+            className={`relative h-20 w-20 overflow-hidden rounded-full shadow-lg transition-transform duration-700 ${
+              playing ? "animate-[spin_6s_linear_infinite]" : ""
+            }`}
+            style={{
+              background:
+                "repeating-radial-gradient(circle at 50% 50%, #1a1a1e 0 2px, #26262c 2px 3px)",
+            }}
           >
-            歌曲 · {songIndex + 1}/{pl.songs.length} <ListIcon />
-          </button>
-
-          {songListOpen && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setSongListOpen(false)} />
-              <div className="scrollbar-none absolute right-0 top-full z-50 mt-1 max-h-56 w-52 overflow-y-auto rounded-2xl border border-white/60 bg-white/90 p-1 shadow-2xl backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-900/95">
-                {pl.songs.map((s, i) => (
-                  <button
-                    key={s.url}
-                    onClick={() => playSong(playlistIndex, i)}
-                    className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm transition ${
-                      i === songIndex
-                        ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-300"
-                        : "text-zinc-700 hover:bg-black/5 dark:text-zinc-200 dark:hover:bg-white/10"
-                    }`}
-                  >
-                    <span className="w-4 shrink-0 text-center text-xs tabular-nums text-zinc-400">
-                      {i === songIndex ? "♪" : i + 1}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate">
-                      {s.title}
-                      {s.artist ? <span className="text-zinc-400"> · {s.artist}</span> : null}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
+            <div className="absolute left-1/2 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-violet-400 to-violet-600 shadow-inner" />
+            <div className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-zinc-900" />
+          </div>
+          {/* 唱臂 */}
+          <div
+            className="absolute -right-1 -top-1.5 h-7 w-0.5 origin-top-right rounded-full bg-zinc-400 transition-transform duration-500 dark:bg-zinc-500"
+            style={{ transform: playing ? "rotate(32deg)" : "rotate(12deg)" }}
+          />
+          {/* 中心小图标 */}
+          <div className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/90" />
         </div>
-        <button
-          onClick={next}
-          aria-label="下一首"
-          className="flex items-center gap-1 rounded-full px-2 py-1 text-xs text-zinc-500 transition hover:bg-black/5 hover:text-zinc-700 dark:hover:bg-white/10 dark:hover:text-zinc-200"
-        >
-          下一首 <NextIcon />
-        </button>
+
+        {/* 歌曲信息 */}
+        <div className="min-w-0 flex-1">
+          <span className="mb-1 inline-block rounded-full bg-violet-500/10 px-2 py-0.5 text-[10px] font-semibold tracking-wider text-violet-500">
+            CLOUD MUSIC
+          </span>
+          <div className="truncate text-lg font-bold leading-tight text-zinc-900 dark:text-white">
+            {song.title}
+          </div>
+          <div className="mt-1 truncate text-xs text-zinc-500 dark:text-zinc-400">
+            {song.artist}
+          </div>
+        </div>
+      </div>
+
+      {/* ── 中间组：编曲信息 + 进度条（my-auto 垂直居中，吃掉富余高度） ── */}
+      <div className="my-auto w-full py-4">
+        <div className="flex items-center gap-1.5 text-xs">
+          <span className="min-w-0 flex-1 truncate text-violet-500">编曲：{song.artist}</span>
+          <span
+            className={`inline-block h-3.5 w-0.5 bg-violet-400 ${
+              playing ? "animate-pulse" : "opacity-30"
+            }`}
+          />
+        </div>
+
+        {/* 进度条：细长横条 + 圆点滑块 */}
+        <div className="mt-3.5 flex items-center gap-2.5">
+          <span className="w-9 shrink-0 text-right text-xs tabular-nums text-zinc-500">
+            {fmt(current)}
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={duration || 0}
+            step={0.1}
+            value={current}
+            onChange={(e) => seek(Number(e.target.value))}
+            aria-label="播放进度"
+            className="h-1 min-w-0 flex-1 cursor-pointer accent-violet-500"
+          />
+          <span className="w-9 shrink-0 text-xs tabular-nums text-zinc-500">{fmt(duration)}</span>
+        </div>
+      </div>
+
+      {/* ── 底部组：控制按钮 + 循环模式（靠下） ── */}
+      <div>
+        <div className="flex items-center justify-center gap-7">
+          <button
+            onClick={prev}
+            disabled={!songs.length}
+            aria-label="上一首"
+            className="flex h-11 w-11 items-center justify-center rounded-full text-zinc-500 transition hover:bg-black/5 hover:text-zinc-700 disabled:opacity-40 dark:hover:bg-white/10 dark:hover:text-zinc-200"
+          >
+            <PrevIcon />
+          </button>
+          <button
+            onClick={toggle}
+            aria-label={playing ? "暂停" : "播放"}
+            className="flex h-14 w-14 items-center justify-center rounded-full bg-violet-500 text-white shadow-lg transition hover:bg-violet-600 hover:shadow-xl"
+          >
+            {playing ? <PauseIcon /> : <PlayIcon />}
+          </button>
+          <button
+            onClick={next}
+            disabled={!songs.length}
+            aria-label="下一首"
+            className="flex h-11 w-11 items-center justify-center rounded-full text-zinc-500 transition hover:bg-black/5 hover:text-zinc-700 disabled:opacity-40 dark:hover:bg-white/10 dark:hover:text-zinc-200"
+          >
+            <NextIcon />
+          </button>
+        </div>
+
+        {/* 循环模式指示 */}
+        <div className="mt-3 flex items-center justify-center">
+          <button
+            onClick={cycleMode}
+            aria-label={mode === "all" ? "顺序播放" : mode === "one" ? "单曲循环" : "随机播放"}
+            title={mode === "all" ? "顺序播放" : mode === "one" ? "单曲循环" : "随机播放"}
+            className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-xs transition hover:bg-black/5 hover:text-zinc-700 dark:hover:bg-white/10 dark:hover:text-zinc-200 ${
+              mode === "all" ? "text-zinc-500" : "text-violet-500"
+            }`}
+          >
+            {mode === "all" ? <RepeatIcon /> : mode === "one" ? <RepeatOneIcon /> : <ShuffleIcon />}
+            <span>{mode === "all" ? "顺序播放" : mode === "one" ? "单曲循环" : "随机播放"}</span>
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -288,7 +152,7 @@ function prev() {
 
 function PlayIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
       <path d="M8 5v14l11-7z" />
     </svg>
   );
@@ -296,7 +160,7 @@ function PlayIcon() {
 
 function PauseIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
       <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
     </svg>
   );
@@ -314,22 +178,6 @@ function NextIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
       <path d="M16 6h2v12h-2zM6 6l8 6-8 6z" />
-    </svg>
-  );
-}
-
-function ListIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M4 6h16v2H4zM4 11h16v2H4zM4 16h16v2H4z" />
-    </svg>
-  );
-}
-
-function CaretIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M7 10l5 5 5-5z" />
     </svg>
   );
 }

@@ -1,9 +1,6 @@
 import Link from "next/link";
-import { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
 import PostCard from "@/components/PostCard";
-
-const SIZE = 10;
+import { getPostList } from "@/lib/public-data";
 
 export default async function PostsPage({
   searchParams,
@@ -16,27 +13,9 @@ export default async function PostsPage({
   const category = sp.category;
   const tag = sp.tag;
 
-  const where: Prisma.PostWhereInput = { published: true };
-  if (q) {
-    where.OR = [
-      { title: { contains: q, mode: "insensitive" } },
-      { content: { contains: q, mode: "insensitive" } },
-    ];
-  }
-  if (category) where.category = { name: category };
-  if (tag) where.tags = { some: { name: tag } };
-
-  const [total, posts] = await Promise.all([
-    prisma.post.count({ where }),
-    prisma.post.findMany({
-      where,
-      include: { category: true, tags: true },
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * SIZE,
-      take: SIZE,
-    }),
-  ]);
-  const totalPages = Math.max(1, Math.ceil(total / SIZE));
+  // 查询按参数独立缓存，只取列表字段（不含正文），云端库下避免每次数秒等待
+  const { total, posts } = await getPostList({ page, q, category, tag });
+  const totalPages = Math.max(1, Math.ceil(total / 10));
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8">

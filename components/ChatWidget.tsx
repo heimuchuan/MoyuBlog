@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import Chat from "./Chat";
 
 type PetState = "idle" | "open" | "thinking";
@@ -8,8 +9,17 @@ type PetState = "idle" | "open" | "thinking";
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [thinking, setThinking] = useState(false);
+  const pathname = usePathname();
 
   const state: PetState = !open ? "idle" : thinking ? "thinking" : "open";
+  // 音乐页内容较满：未展开的宠物/气泡降低透明度并更贴边，悬停恢复
+  const dimmed = pathname?.startsWith("/music") && !open;
+  const bubblePosCls = dimmed
+    ? "bottom-20 right-3 opacity-25 hover:opacity-100"
+    : "bottom-24 right-6 opacity-100";
+  const petPosCls = dimmed
+    ? "bottom-3 right-3 opacity-50 hover:opacity-100"
+    : "bottom-6 right-6 opacity-100";
 
   return (
     <>
@@ -17,10 +27,10 @@ export default function ChatWidget() {
       <button
         onClick={() => setOpen(true)}
         aria-label="打开智能问答"
-        className={`glass fixed bottom-24 right-6 z-50 origin-bottom-right rounded-2xl rounded-br-sm px-3 py-2 text-sm text-zinc-700 transition-all duration-500 dark:text-zinc-200 ${
+        className={`glass fixed z-50 origin-bottom-right rounded-2xl rounded-br-sm px-3 py-2 text-sm text-zinc-700 transition-all duration-500 dark:text-zinc-200 ${
           open
-            ? "pointer-events-none translate-y-1 opacity-0"
-            : "opacity-100 hover:-translate-y-0.5"
+            ? "pointer-events-none bottom-24 right-6 translate-y-1 opacity-0"
+            : `${bubblePosCls} hover:-translate-y-0.5`
         }`}
       >
         👋 点我，陪你聊聊校园～
@@ -30,7 +40,7 @@ export default function ChatWidget() {
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "关闭智能问答" : "打开智能问答"}
-        className="group fixed bottom-6 right-6 z-50 transition-all duration-500 hover:scale-105 active:scale-95"
+        className={`group fixed z-50 transition-all duration-500 hover:scale-105 active:scale-95 ${petPosCls}`}
       >
         <span className="relative block">
           {/* 呼吸光晕 */}

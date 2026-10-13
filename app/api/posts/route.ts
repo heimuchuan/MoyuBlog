@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { uniqueSlug } from "@/lib/utils";
@@ -30,5 +31,6 @@ export async function POST(req: NextRequest) {
     },
     include: { category: true, tags: true },
   });
+  revalidateTag("posts", "max"); // 文章列表 + 首页缓存立即失效
   return NextResponse.json(post);
 }

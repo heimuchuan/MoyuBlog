@@ -1,6 +1,6 @@
 // 歌单与歌词类型 + LRC 解析工具
-// 歌曲文件放 public/music/ 下（.mp3），歌词放同名 .lrc 文件，服务端会自动扫描解析，
-// 无需再手填歌单。文件名即歌名，歌手等信息优先取 LRC 里的 [ar:][ti:] 标签。
+// 音源来自 Meting API（网易云歌单），服务端拉取播放地址与 LRC 文本后解析，
+// 无需在本地维护音频/歌词文件。
 
 export type LyricLine = { time: number; text: string; trans?: string };
 
@@ -8,14 +8,51 @@ export type Song = {
   url: string;
   title: string;
   artist: string;
+  pic?: string; // 专辑封面（Meting 返回）
   lyrics: LyricLine[];
 };
 
-// 一个歌单 = 一个文件夹，name 是文件夹名
-export type Playlist = {
+// 歌单元信息（列表展示用，不含全部歌曲）
+export type PlaylistMeta = {
+  id: string;
   name: string;
+  cover?: string; // 歌单封面（取首曲专辑图）
+  songCount?: number;
+};
+
+// 一个完整歌单
+export type Playlist = PlaylistMeta & {
   songs: Song[];
 };
+
+// 解析用户输入：支持纯数字 ID，或网易云歌单链接
+// 例：https://music.163.com/#/playlist?id=18414534798
+//     https://music.163.com/playlist/18414534798/xxx
+export function parsePlaylistId(input: string): string | null {
+  const s = input.trim();
+  if (/^\d+$/.test(s)) return s;
+  const m = s.match(/[?&]id=(\d+)/) ?? s.match(/playlist\/(\d+)/);
+  return m ? m[1] : null;
+}
+
+// 读取环境变量里配置的精选歌单：NETEASE_PLAYLISTS="id:名称,id:名称"
+// 兼容旧变量 NETEASE_PLAYLIST_ID / NETEASE_PLAYLIST_NAME
+export function getConfiguredPlaylists(): { id: string; name: string }[] {
+  const raw = process.env.NETEASE_PLAYLISTS;
+  if (raw) {
+    const list = raw
+      .split(",")
+      .map((item) => {
+        const [id, ...rest] = item.trim().split(":");
+        return { id: id?.trim() ?? "", name: rest.join(":").trim() || "未命名歌单" };
+      })
+      .filter((p) => /^\d+$/.test(p.id));
+    if (list.length) return list;
+  }
+  const legacyId = process.env.NETEASE_PLAYLIST_ID;
+  if (legacyId) return [{ id: legacyId, name: process.env.NETEASE_PLAYLIST_NAME || "我的歌单" }];
+  return [{ id: "18414534798", name: "我的歌单" }];
+}
 
 // 把一段 LRC 歌词文本解析成按时间排序的歌词行，并顺带提取歌名/歌手元信息
 // 支持 [mm:ss]、[mm:ss.x]、[mm:ss.xx]、[mm:ss.xxx]，以及一行多时间标签。

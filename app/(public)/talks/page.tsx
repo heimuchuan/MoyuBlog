@@ -1,22 +1,16 @@
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import { getPublicTalks } from "@/lib/public-data";
 
-// 动态渲染：发布后立即展示
-export const dynamic = "force-dynamic";
-
-function formatTime(d: Date) {
-  const week = ["日", "一", "二", "三", "四", "五", "六"][d.getDay()];
-  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 星期${week} ${String(
-    d.getHours()
-  ).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+function formatTime(d: Date | string) {
+  const date = new Date(d); // 缓存反序列化后 Date 会变成字符串
+  const week = ["日", "一", "二", "三", "四", "五", "六"][date.getDay()];
+  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 星期${week} ${String(
+    date.getHours()
+  ).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
 
 export default async function TalksPage() {
-  const talks = await prisma.talk.findMany({
-    where: { visibility: "public" },
-    orderBy: { createdAt: "desc" },
-    take: 200,
-  });
+  const talks = await getPublicTalks();
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-10">

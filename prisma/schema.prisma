@@ -82,12 +82,26 @@ model QALog {
   createdAt DateTime @default(now())
 }
 
+// 相册（照片墙分组）
+model Album {
+  id           Int      @id @default(autoincrement())
+  name         String // 相册名
+  coverPhotoId Int? // 指定封面照片 ID，不填则取册内最新一张
+  photos       Photo[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
 // 照片（照片墙）
 model Photo {
   id        Int      @id @default(autoincrement())
   title     String? // 可选标题/描述
   fileName  String   // 存储文件名（public/uploads/photos/ 下）
+  albumId   Int? // 所属相册，为空表示未分组
+  album     Album?   @relation(fields: [albumId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
+
+  @@index([albumId])
 }
 
 // 说说（短文本碎碎念）

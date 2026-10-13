@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -31,6 +32,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     },
     include: { category: true, tags: true },
   });
+  revalidateTag("posts", "max");
   return NextResponse.json(post);
 }
 
@@ -42,5 +44,6 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   }
   const { id } = await params;
   await prisma.post.delete({ where: { id: Number(id) } });
+  revalidateTag("posts", "max");
   return NextResponse.json({ ok: true });
 }

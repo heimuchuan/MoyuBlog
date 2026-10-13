@@ -30,8 +30,8 @@ export default function BackgroundSlideshow() {
 
   return (
     <>
-      {/* 背景图：50% 透明 + 模糊；外扩 16px 防止模糊在边缘产生羽化露底 */}
-      <div className="absolute -inset-4 bg-cover opacity-50 blur-[10px] transition-all duration-1000 dark:opacity-35">
+      {/* 背景图：降低明度 + 模糊；外扩 16px 防止模糊在边缘产生羽化露底 */}
+      <div className="absolute -inset-4 bg-cover opacity-40 blur-[10px] transition-all duration-1000 dark:opacity-25">
         {IMAGES.map((img, i) => (
           <div
             key={img.src}
@@ -44,6 +44,9 @@ export default function BackgroundSlideshow() {
           />
         ))}
       </div>
+
+      {/* 深色遮罩：独立层，压低背景明度，保证毛玻璃卡片上的文字可读 */}
+      <div className="absolute -inset-4 bg-black/20 dark:bg-black/35" />
 
       {/* 彩色光斑 */}
       <div className="absolute inset-0">

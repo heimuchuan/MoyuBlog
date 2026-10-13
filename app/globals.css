@@ -223,12 +223,55 @@ body::-webkit-scrollbar {
 
 /* 纯淡入（无位移）：照片轮播标题随图片一起浮出 */
 @keyframes content-fade {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 时钟冒号每秒硬闪一次（赛博数码管感，暗态 0.3） */
+@keyframes time-colon-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0.3; }
+}
+.time-colon-blink {
+  animation: time-colon-blink 1s steps(1, end) infinite;
+}
+
+/* 音乐页歌曲列表：4px 极细滚动条，默认隐身，悬停列表才淡入 */
+.music-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s ease;
+}
+.music-scroll:hover {
+  scrollbar-color: rgba(139, 92, 246, 0.4) transparent;
+}
+.music-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.music-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.music-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 9999px;
+  transition: background 0.3s ease;
+}
+.music-scroll:hover::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.35);
+}
+.music-scroll:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.6);
+}
+
+/* 时间微件数码字：小模糊半径的微弱紫色发光，悬停微件时轻微增强 */
+.time-digits {
+  text-shadow: 0 0 3px rgba(139, 92, 246, 0.35);
+  transition:
+    text-shadow 0.3s ease,
+    color 0.3s ease;
+}
+.group:hover .time-digits {
+  text-shadow: 0 0 6px rgba(139, 92, 246, 0.55);
 }
 
 /* 歌词卡律动柱状图：竖条柔和呼吸，整体缓慢起伏 */
@@ -239,6 +282,18 @@ body::-webkit-scrollbar {
   }
   50% {
     transform: scaleY(1);
+  }
+}
+
+/* 歌词卡单行切换：淡入 + 轻微上移，平滑不闪烁 */
+@keyframes lyric-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

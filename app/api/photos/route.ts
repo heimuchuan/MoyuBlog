@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import path from "path";
 import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -44,9 +45,47 @@ export async function POST(req: NextRequest) {
   });
 
   const title = String(form.get("title") || "").trim();
+  // 可选：上传时归入指定相册
+  const albumRaw = form.get("albumId");
+  const albumId = albumRaw ? Number(albumRaw) : null;
+  const album = albumId
+    ? await prisma.album.findUnique({ where: { id: albumId } })
+    : null;
+
   const photo = await prisma.photo.create({
-    data: { title: title || null, fileName: stored },
+    data: { title: title || null, fileName: stored, albumId: album?.id ?? null },
   });
+  revalidateTag("photos", { expire: 0 }); // 照片墙 + 首页缓存立即失效
+  revalidateTag("albums", { expire: 0 });
+  return NextResponse.json(photo);
+}
+
+// 移动照片到指定相册（仅管理员）：albumId 为 null 表示移到「未分组」
+export async function PATCH(req: NextRequest) {
+  const session = await getAuthSession(req);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "未登录" }, { status: 401 });
+  }
+
+  const { id, albumId } = await req.json();
+  const photoId = Number(id);
+  if (!Number.isInteger(photoId)) {
+    return NextResponse.json({ error: "照片 ID 无效" }, { status: 400 });
+  }
+  const targetId = albumId == null ? null : Number(albumId);
+  if (targetId !== null) {
+    const album = await prisma.album.findUnique({ where: { id: targetId } });
+    if (!album) {
+      return NextResponse.json({ error: "相册不存在" }, { status: 404 });
+    }
+  }
+
+  const photo = await prisma.photo.update({
+    where: { id: photoId },
+    data: { albumId: targetId },
+  });
+  revalidateTag("photos", { expire: 0 });
+  revalidateTag("albums", { expire: 0 });
   return NextResponse.json(photo);
 }
 
@@ -61,6 +100,8 @@ export async function DELETE(req: NextRequest) {
   const photo = await prisma.photo.delete({ where: { id: Number(id) } }).catch(() => null);
   if (photo) {
     await removeUpload(photo.fileName, UPLOAD_DIR);
+    revalidateTag("photos", { expire: 0 });
+    revalidateTag("albums", { expire: 0 });
   }
   return NextResponse.json({ ok: true });
 }

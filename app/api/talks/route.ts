@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -20,6 +21,7 @@ export async function POST(req: NextRequest) {
   }
   const vis = visibility === "private" ? "private" : "public";
   const talk = await prisma.talk.create({ data: { content: text, visibility: vis } });
+  revalidateTag("talks", "max"); // 说说页 + 首页缓存立即失效
   return NextResponse.json(talk);
 }
 
@@ -37,6 +39,7 @@ export async function PATCH(req: NextRequest) {
   if (!talk) {
     return NextResponse.json({ error: "说说不存在" }, { status: 404 });
   }
+  revalidateTag("talks", "max");
   return NextResponse.json(talk);
 }
 
@@ -48,5 +51,6 @@ export async function DELETE(req: NextRequest) {
   }
   const { id } = await req.json();
   await prisma.talk.delete({ where: { id: Number(id) } }).catch(() => null);
+  revalidateTag("talks", "max");
   return NextResponse.json({ ok: true });
 }
