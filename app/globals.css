@@ -97,6 +97,18 @@ body::-webkit-scrollbar {
     0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
+/* 大屏展示模式专用：深色毛玻璃浮层（压在高清背景图上，保证白字可读） */
+.glass-dark {
+  background: rgba(15, 18, 28, 0.55);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
 /* 顶部导航栏悬浮毛玻璃：sticky 吸顶 + 圆角悬浮 + 50% 透明 + 背景模糊 + 极细发光边 */
 .nav-glass {
   position: sticky;
@@ -121,6 +133,35 @@ body::-webkit-scrollbar {
     inset 0 1px 0 rgba(255, 255, 255, 0.06),
     0 0 12px rgba(140, 180, 220, 0.15),
     0 4px 24px rgba(0, 0, 0, 0.45);
+}
+
+/* ── 后台日间可读性增强（.admin-scope 由 AdminShell 挂载，夜间/前台不受影响）──
+   后台组件按暗底照片墙设计：日间下玻璃太透、浅灰文字与白色 chip 对比度不足。
+   这里集中修正：卡片更实、浅灰文字加深一档、白色 chip 转深色底。 */
+html:not(.dark) .admin-scope .glass {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.4),
+    0 8px 24px rgba(30, 30, 60, 0.12);
+}
+html:not(.dark) .admin-scope .text-zinc-400 {
+  color: #52525b; /* zinc-600 */
+}
+html:not(.dark) .admin-scope .text-zinc-500 {
+  color: #3f3f46; /* zinc-700 */
+}
+html:not(.dark) .admin-scope .bg-white\/10 {
+  background-color: rgba(0, 0, 0, 0.06);
+}
+html:not(.dark) .admin-scope .bg-white\/5 {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+html:not(.dark) .admin-scope .border-white\/10 {
+  border-color: rgba(15, 23, 42, 0.1);
+}
+html:not(.dark) .admin-scope .border-white\/20 {
+  border-color: rgba(15, 23, 42, 0.16);
 }
 
 /* 自定义分类下拉菜单：淡入 + 轻微下滑（替代原生 select 弹层） */

@@ -24,7 +24,8 @@ model Post {
   slug       String    @unique
   content    String // Markdown 原文
   excerpt    String? // 摘要
-  published  Boolean   @default(false)
+  published  Boolean   @default(false) // 是否发布（草稿开关）
+  publishAt  DateTime? // 定时发布时间：非空时到点前前台不可见
   authorId   Int
   author     User      @relation(fields: [authorId], references: [id])
   categoryId Int?
@@ -33,6 +34,8 @@ model Post {
   views      Int       @default(0)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
+
+  @@index([published, publishAt])
 }
 
 // 分类
@@ -86,6 +89,7 @@ model QALog {
 model Album {
   id           Int      @id @default(autoincrement())
   name         String // 相册名
+  featured     Boolean  @default(false) // 是否在首页照片卡展示（前台照片页管理员可切换）
   coverPhotoId Int? // 指定封面照片 ID，不填则取册内最新一张
   photos       Photo[]
   createdAt    DateTime @default(now())
@@ -110,6 +114,126 @@ model Talk {
   content    String // 正文（限 500 字）
   visibility String   @default("public") // public 公开（前台可见）| private 私密（仅后台）
   createdAt  DateTime @default(now())
+}
+
+// 金句（首页大屏打字机循环展示）
+model Quote {
+  id        Int      @id @default(autoincrement())
+  content   String // 金句正文
+  active    Boolean  @default(true) // 是否启用（关闭后不展示但不删除）
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([active])
+}
+
+// 弹幕（首页背景流动文字）
+model Danmaku {
+  id        Int      @id @default(autoincrement())
+  text      String // 弹幕内容
+  top       Float    @default(0) // 垂直位置（0-100，百分比）
+  dur       Int      @default(18) // 滚动时长（秒）
+  order     Int      @default(0) // 排序，越小越靠前
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([order])
+}
+
+// 留言板（大屏留言墙；先发后审，后台可删）
+model GuestbookMessage {
+  id          Int      @id @default(autoincrement())
+  name        String // 昵称（GitHub 登录用户强制用 GitHub 名，防冒充）
+  content     String
+  avatarUrl   String? // GitHub 头像 URL；匿名为空，前端显示首字彩块
+  githubLogin String? // GitHub 登录名，非空即「已认证」标识
+  ip          String? // 发表者 IP（限流与后台排查用）
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// 大屏标签（首页 Tags 卡片）
+model ShowcaseTag {
+  id        Int      @id @default(autoincrement())
+  name      String // 标签文字
+  order     Int      @default(0) // 排序，越小越靠前
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([order])
+}
+
+// 社交链接（首页大屏社交图标行）
+model SocialLink {
+  id        Int      @id @default(autoincrement())
+  label     String // 显示名，如 GitHub
+  href      String // 链接地址
+  icon      String // 图标标识：github / mail / twitter / ...
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([order])
+}
+
+// 站点配置（键值对：头像等零散站点级设置）
+model SiteConfig {
+  key       String   @id // 配置键，如 avatar
+  value     String // 配置值（头像为存储引用：Blob URL 或本地文件名）
+  updatedAt DateTime @updatedAt
+}
+
+// 音乐歌单（后台配置的精选歌单，前台可切换播放）
+model Playlist {
+  id         Int      @id @default(autoincrement())
+  playlistId String   @unique // 网易云歌单 ID
+  name       String // 歌单名（后台可改，新增时默认取网易云真实名称）
+  cover      String? // 封面地址（取首曲专辑图）
+  songCount  Int      @default(0) // 曲目数
+  order      Int      @default(0) // 排序，越小越靠前
+  active     Boolean  @default(true) // 是否在前台展示
+  isDefault  Boolean  @default(false) // 是否作为前台默认加载的歌单（全局仅一个）
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([order])
+}
+
+// 项目分类（后台可自由增删）
+model ProjectCategory {
+  id        Int       @id @default(autoincrement())
+  key       String    @unique // 唯一标识，如 web / tool，URL 友好
+  name      String // 显示名，如 Web / 工具
+  order     Int       @default(0)
+  active    Boolean   @default(true)
+  projects  Project[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([order])
+}
+
+// 项目（前台项目页卡片）
+model Project {
+  id          Int              @id @default(autoincrement())
+  slug        String           @unique // URL 友好标识
+  title       String // 标题
+  description String // 描述
+  cover       String? // 封面：Blob URL 或外部 URL 或本地文件名
+  date        String // 日期，如 2024.05
+  tags        String // 标签，JSON 数组字符串，如 ["Next.js","React"]
+  categoryId  Int
+  category    ProjectCategory  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  url         String // 项目地址（Gitee/GitHub），点击卡片跳转
+  span        String           @default("sm") // 卡片大小：sm 小格 / lg 大格
+  order       Int              @default(0)
+  active      Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([order])
 }
 
 // 记账条目（仅后台，独立密码进入）

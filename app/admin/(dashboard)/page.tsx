@@ -1,13 +1,24 @@
 import Link from "next/link";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 
+// 缓存概览统计，10 秒内重复访问直接读缓存，减少远程数据库查询
+const getStats = unstable_cache(
+  async () => {
+    const [postCount, categoryCount, docCount, qaCount] = await Promise.all([
+      prisma.post.count(),
+      prisma.category.count(),
+      prisma.knowledgeDoc.count(),
+      prisma.qALog.count(),
+    ]);
+    return { postCount, categoryCount, docCount, qaCount };
+  },
+  ["admin-dashboard-stats"],
+  { revalidate: 10 }
+);
+
 export default async function AdminDashboard() {
-  const [postCount, categoryCount, docCount, qaCount] = await Promise.all([
-    prisma.post.count(),
-    prisma.category.count(),
-    prisma.knowledgeDoc.count(),
-    prisma.qALog.count(),
-  ]);
+  const { postCount, categoryCount, docCount, qaCount } = await getStats();
 
   const stats = [
     { label: "文章", value: postCount, href: "/admin/posts" },

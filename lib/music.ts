@@ -25,9 +25,11 @@ export type Playlist = PlaylistMeta & {
   songs: Song[];
 };
 
-// 解析用户输入：支持纯数字 ID，或网易云歌单链接
-// 例：https://music.163.com/#/playlist?id=18414534798
+// 解析用户输入：支持纯数字 ID，或网易云歌单链接（含 App 分享的整段文案）
+// 例：18414534798
+//     https://music.163.com/#/playlist?id=18414534798
 //     https://music.163.com/playlist/18414534798/xxx
+//     分享阿杰的歌单《学外语》http://music.163.com/playlist/18414534798/xxx (@网易云音乐)
 export function parsePlaylistId(input: string): string | null {
   const s = input.trim();
   if (/^\d+$/.test(s)) return s;
@@ -35,23 +37,19 @@ export function parsePlaylistId(input: string): string | null {
   return m ? m[1] : null;
 }
 
-// 读取环境变量里配置的精选歌单：NETEASE_PLAYLISTS="id:名称,id:名称"
-// 兼容旧变量 NETEASE_PLAYLIST_ID / NETEASE_PLAYLIST_NAME
-export function getConfiguredPlaylists(): { id: string; name: string }[] {
-  const raw = process.env.NETEASE_PLAYLISTS;
-  if (raw) {
-    const list = raw
-      .split(",")
-      .map((item) => {
-        const [id, ...rest] = item.trim().split(":");
-        return { id: id?.trim() ?? "", name: rest.join(":").trim() || "未命名歌单" };
-      })
-      .filter((p) => /^\d+$/.test(p.id));
-    if (list.length) return list;
-  }
-  const legacyId = process.env.NETEASE_PLAYLIST_ID;
-  if (legacyId) return [{ id: legacyId, name: process.env.NETEASE_PLAYLIST_NAME || "我的歌单" }];
-  return [{ id: "18414534798", name: "我的歌单" }];
+// 从任意文本里抓出第一个链接（App 分享文案中链接前后常有中文说明）
+export function extractUrl(text: string): string | null {
+  const m = text.match(/https?:\/\/[^\s，,。；;"'）)】\]]+/);
+  return m ? m[0] : null;
+}
+
+// 解析用户粘贴的内容：能从文本里直接取到歌单 ID就返回；取不到（多为短链 163cn.tv）返回 null，
+// 由调用方再走 /api/music/resolve 跟随跳转解析。
+export function parsePlaylistInput(text: string): string | null {
+  const direct = parsePlaylistId(text);
+  if (direct) return direct;
+  const url = extractUrl(text);
+  return url ? parsePlaylistId(url) : null;
 }
 
 // 把一段 LRC 歌词文本解析成按时间排序的歌词行，并顺带提取歌名/歌手元信息

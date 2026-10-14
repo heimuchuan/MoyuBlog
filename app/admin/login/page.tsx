@@ -1,15 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { usePageTransition } from "@/components/PageTransition";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { end: endTransition } = usePageTransition();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // 登录页挂载后关闭前台→后台的转场遮罩
+  useEffect(() => {
+    const t = setTimeout(() => endTransition(), 100);
+    return () => clearTimeout(t);
+  }, [endTransition]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();

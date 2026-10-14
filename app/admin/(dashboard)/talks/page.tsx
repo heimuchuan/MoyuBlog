@@ -1,16 +1,24 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import TalkComposer from "@/components/admin/TalkComposer";
 import TalkVisibilityToggle from "@/components/admin/TalkVisibilityToggle";
 import DeleteButton from "@/components/admin/DeleteButton";
 
-function formatTime(d: Date) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-    d.getDate()
-  ).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+function formatTime(d: Date | string) {
+  const date = typeof d === "string" ? new Date(d) : d;
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+    date.getDate()
+  ).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
 
+const getTalks = unstable_cache(
+  async () => prisma.talk.findMany({ orderBy: { createdAt: "desc" }, take: 200 }),
+  ["admin-talks-list"],
+  { revalidate: 10 }
+);
+
 export default async function AdminTalksPage() {
-  const talks = await prisma.talk.findMany({ orderBy: { createdAt: "desc" }, take: 200 });
+  const talks = await getTalks();
   const privateCount = talks.filter((t) => t.visibility === "private").length;
   const publicCount = talks.length - privateCount;
 

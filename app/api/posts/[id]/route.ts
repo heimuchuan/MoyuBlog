@@ -13,9 +13,18 @@ export async function PUT(req: NextRequest, { params }: Params) {
   }
   const { id } = await params;
   const body = await req.json();
-  const { title, content, excerpt, published, categoryId, tags } = body;
+  const { title, content, excerpt, published, categoryId, tags, publishAt } = body;
   if (!title || !content) {
     return NextResponse.json({ error: "标题和内容不能为空" }, { status: 400 });
+  }
+  // 定时发布时间：为空表示不定时；非法格式直接拒绝；定了时间即视为已发布（避免「草稿+定时」矛盾状态）
+  let publishAtDate: Date | null = null;
+  if (publishAt) {
+    const d = new Date(publishAt);
+    if (Number.isNaN(d.getTime())) {
+      return NextResponse.json({ error: "定时发布时间格式不正确" }, { status: 400 });
+    }
+    publishAtDate = d;
   }
   const tagArray = Array.isArray(tags) ? tags.map((t: unknown) => String(t).trim()).filter(Boolean) : [];
   const post = await prisma.post.update({
@@ -24,7 +33,8 @@ export async function PUT(req: NextRequest, { params }: Params) {
       title,
       content,
       excerpt: excerpt || null,
-      published: !!published,
+      published: publishAtDate ? true : !!published,
+      publishAt: publishAtDate,
       categoryId: categoryId ? Number(categoryId) : null,
       tags: tagArray.length
         ? { set: [], connectOrCreate: tagArray.map((name: string) => ({ where: { name }, create: { name } })) }
@@ -32,7 +42,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     },
     include: { category: true, tags: true },
   });
-  revalidateTag("posts", "max");
+  revalidateTag("posts", { expire: 0 }); // 立即失效（Route Handler 内不用 max 的 stale-while-revalidate）
   return NextResponse.json(post);
 }
 
@@ -44,6 +54,6 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   }
   const { id } = await params;
   await prisma.post.delete({ where: { id: Number(id) } });
-  revalidateTag("posts", "max");
+  revalidateTag("posts", { expire: 0 }); // 立即失效（Route Handler 内不用 max 的 stale-while-revalidate）
   return NextResponse.json({ ok: true });
 }

@@ -5,7 +5,12 @@ import Link from "next/link";
 import { photoUrl } from "@/lib/photo-url";
 import { useTilt } from "./useTilt";
 
-export type HomePhoto = { id: number; fileName: string; title: string | null };
+export type HomePhoto = {
+  id: number;
+  fileName: string;
+  title: string | null;
+  albumName?: string | null;
+};
 
 const ROTATE_MS = 4500;
 const FADE_MS = 1100; // 淡入淡出时长：前一张慢慢消失、后一张慢慢浮出
@@ -89,7 +94,7 @@ export default function PhotosCard({
           >
             <div className="min-w-0">
               <div className="truncate text-sm font-medium text-zinc-700 dark:text-zinc-200">
-                {current?.title || "照片"}
+                {current?.title || current?.albumName || "照片"}
               </div>
               <div className="text-[11px] text-zinc-400">生活碎片 · {idx + 1}/{photos.length}</div>
             </div>

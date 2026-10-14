@@ -15,8 +15,8 @@ import { type Playlist, type PlaylistMeta, type Song } from "@/lib/music";
 type Mode = "all" | "one" | "shuffle";
 
 type MusicContextValue = {
-  metas: PlaylistMeta[]; // 精选歌单列表
-  customMetas: PlaylistMeta[]; // 用户导入并收藏的歌单（localStorage 持久化）
+  metas: PlaylistMeta[]; // 后台配置的精选歌单
+  tempMetas: PlaylistMeta[]; // 访客本次导入的临时歌单（仅内存，刷新/关页即清空）
   activeMeta?: PlaylistMeta; // 当前歌单元信息
   songs: Song[]; // 当前歌单歌曲
   songIndex: number;
@@ -31,7 +31,7 @@ type MusicContextValue = {
     autoplay?: boolean,
     save?: boolean,
   ) => Promise<{ ok: boolean; error?: string }>;
-  removeCustomPlaylist: (id: string) => void;
+  removeTempPlaylist: (id: string) => void;
   playAt: (index: number) => void;
   toggle: () => void;
   next: () => void;
@@ -40,7 +40,8 @@ type MusicContextValue = {
   cycleMode: () => void;
 };
 
-const CUSTOM_STORAGE_KEY = "moyu_custom_playlists";
+// 旧版本把「我的歌单」存在本地浏览器里，现已改为后台配置 + 临时歌单，挂载时清理一次存量数据
+const LEGACY_STORAGE_KEY = "moyu_custom_playlists";
 
 const MusicContext = createContext<MusicContextValue | null>(null);
 
@@ -53,9 +54,7 @@ export function useMusic() {
 export function MusicProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [metas, setMetas] = useState<PlaylistMeta[]>([]);
-  const [customMetas, setCustomMetas] = useState<PlaylistMeta[]>([]);
-  // 本地收藏读取完成前禁止写 localStorage，防止 StrictMode 双调用用空数组覆盖存量数据
-  const [customHydrated, setCustomHydrated] = useState(false);
+  const [tempMetas, setTempMetas] = useState<PlaylistMeta[]>([]);
   const [activeMeta, setActiveMeta] = useState<PlaylistMeta>();
   const [songs, setSongs] = useState<Song[]>([]);
   const [songIndex, setSongIndex] = useState(0);
@@ -85,38 +84,22 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 初始：从 localStorage 恢复用户收藏的歌单
+  // 清理旧版本遗留的本地「我的歌单」数据（现改为后台配置 + 临时歌单，不再落本地）
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(CUSTOM_STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as unknown;
-        if (Array.isArray(parsed)) setCustomMetas(parsed as PlaylistMeta[]);
-      }
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
     } catch {
-      /* 忽略损坏的本地数据 */
-    } finally {
-      setCustomHydrated(true);
+      /* 存储不可用时忽略 */
     }
   }, []);
 
-  // 收藏歌单变化时写回 localStorage（读取完成后才允许写）
-  useEffect(() => {
-    if (!customHydrated) return;
-    try {
-      localStorage.setItem(CUSTOM_STORAGE_KEY, JSON.stringify(customMetas));
-    } catch {
-      /* 存储不可用时静默失败 */
-    }
-  }, [customMetas, customHydrated]);
-
-  // 删除一个收藏歌单（若正在播放它，由页面决定切到哪个歌单）
-  const removeCustomPlaylist = useCallback((id: string) => {
-    setCustomMetas((prev) => prev.filter((m) => m.id !== id));
+  // 移除一个临时歌单（若正在播放它，由页面决定切到哪个歌单）
+  const removeTempPlaylist = useCallback((id: string) => {
+    setTempMetas((prev) => prev.filter((m) => m.id !== id));
   }, []);
 
-  // 打开任意歌单（精选或用户粘贴的 ID/链接解析后的 ID）
-  // save=true 时自动收藏到"我的歌单"；初始自动加载精选歌单时传 false
+  // 打开任意歌单（后台精选，或访客导入的临时歌单）
+  // save=true 时加入"临时歌单"（仅本次会话）；初始自动加载精选歌单时传 false
   const openPlaylist = useCallback(
     async (id: string, autoplay = true, save = true) => {
       setLoadingPlaylist(true);
@@ -133,9 +116,9 @@ export function MusicProvider({ children }: { children: ReactNode }) {
           cover: pl.cover,
           songCount: pl.songCount,
         });
-        // 自动收藏到"我的歌单"（已存在则原地更新，新导入的插到最前）
+        // 加入"临时歌单"（已存在则原地更新，新导入的插到最前）
         if (save) {
-          setCustomMetas((prev) => {
+          setTempMetas((prev) => {
             const meta: PlaylistMeta = {
               id: pl.id,
               name: pl.name,
@@ -228,9 +211,9 @@ export function MusicProvider({ children }: { children: ReactNode }) {
   const value = useMemo<MusicContextValue>(
     () => ({
       metas,
-      customMetas,
+      tempMetas,
       activeMeta,
-      removeCustomPlaylist,
+      removeTempPlaylist,
       songs,
       songIndex,
       currentSong,
@@ -249,8 +232,8 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     }),
     [
       metas,
-      customMetas,
-      removeCustomPlaylist,
+      tempMetas,
+      removeTempPlaylist,
       activeMeta,
       songs,
       songIndex,

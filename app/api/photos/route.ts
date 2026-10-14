@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
+import { revalidateTag, unstable_cache } from "next/cache";
 import path from "path";
 import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -13,6 +13,21 @@ const TYPE_EXT: Record<string, string> = {
   "image/gif": "gif",
 };
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+
+// 列出所有照片（供后台「从照片库选择封面」用）；云端 DB 延迟高，走 tag 缓存
+const getPhotosCached = unstable_cache(
+  async () =>
+    prisma.photo.findMany({
+      orderBy: { createdAt: "desc" },
+      select: { id: true, title: true, fileName: true, albumId: true },
+    }),
+  ["api-photos"],
+  { revalidate: 3600, tags: ["photos"] },
+);
+
+export async function GET() {
+  return NextResponse.json(await getPhotosCached());
+}
 
 // 上传照片（仅管理员）：线上存 Vercel Blob，本地存 public/uploads/photos/，记录入库
 export async function POST(req: NextRequest) {

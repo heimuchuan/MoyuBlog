@@ -10,8 +10,8 @@ export default async function AdminLayout({
 
   return (
     <div className="relative min-h-screen">
-      {/* 后台背景压暗遮罩：盖住全局 BackgroundSlideshow，便于专注工作 */}
-      <div className="fixed inset-0 -z-10 bg-black/40" />
+      {/* 后台背景遮罩：盖住全局 BackgroundSlideshow，便于专注工作；日间用白色轻纱保证可读性，夜间保持压暗 */}
+      <div className="fixed inset-0 -z-10 bg-white/60 dark:bg-black/40" />
       <AdminShell userName={session.user.name ?? "管理员"}>
         {children}
       </AdminShell>

@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import KnowledgeUploadForm from "@/components/admin/KnowledgeUploadForm";
 import DeleteButton from "@/components/admin/DeleteButton";
@@ -9,11 +10,18 @@ const STATUS_LABEL: Record<string, { text: string; className: string }> = {
   pending: { text: "待处理", className: "bg-zinc-100 text-zinc-500 dark:bg-zinc-800" },
 };
 
+const getDocs = unstable_cache(
+  async () =>
+    prisma.knowledgeDoc.findMany({
+      include: { _count: { select: { chunks: true } } },
+      orderBy: { createdAt: "desc" },
+    }),
+  ["admin-knowledge-list"],
+  { revalidate: 10 }
+);
+
 export default async function AdminKnowledge() {
-  const docs = await prisma.knowledgeDoc.findMany({
-    include: { _count: { select: { chunks: true } } },
-    orderBy: { createdAt: "desc" },
-  });
+  const docs = await getDocs();
 
   return (
     <div>

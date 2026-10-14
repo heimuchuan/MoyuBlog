@@ -3,19 +3,19 @@
 import { useState } from "react";
 import MusicPlayer from "@/components/MusicPlayer";
 import { useMusic } from "@/components/music/MusicContext";
-import { parsePlaylistId, type PlaylistMeta } from "@/lib/music";
+import { extractUrl, parsePlaylistInput, type PlaylistMeta } from "@/lib/music";
 
 export default function MusicPage() {
   const {
     metas,
-    customMetas,
+    tempMetas,
     activeMeta,
     songs,
     songIndex,
     playing,
     loadingPlaylist,
     openPlaylist,
-    removeCustomPlaylist,
+    removeTempPlaylist,
     playAt,
   } = useMusic();
   const [input, setInput] = useState("");
@@ -33,24 +33,41 @@ export default function MusicPage() {
     setOpeningId(null);
   }
 
-  // 删除收藏歌单；若正在播放它，自动切到第一个可用歌单（回退到精选不触发收藏）
+  // 移除临时歌单；若正在播放它，自动切到第一个可用歌单（回退到精选不触发收藏）
   function handleRemove(id: string) {
     const wasActive = activeMeta?.id === id;
-    removeCustomPlaylist(id);
+    removeTempPlaylist(id);
     if (wasActive) {
       const nextFeatured = metas[0];
-      const nextCustom = customMetas.find((m) => m.id !== id);
+      const nextTemp = tempMetas.find((m) => m.id !== id);
       if (nextFeatured) void openPlaylist(nextFeatured.id, false, false);
-      else if (nextCustom) void openPlaylist(nextCustom.id, false, false);
+      else if (nextTemp) void openPlaylist(nextTemp.id, false, false);
     }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const id = parsePlaylistId(input);
+    const text = input.trim();
+    if (!text) return;
+    setError("");
+    setOpeningId("__parse");
+    // 本地能解析就直接拿 ID；短链（163cn.tv）交给服务端跟随跳转解析
+    let id = parsePlaylistInput(text);
     if (!id) {
-      setError("请输入有效的网易云歌单 ID 或歌单链接");
-      return;
+      const url = extractUrl(text);
+      if (!url) {
+        setError("无法识别，请粘贴网易云歌单链接或歌单 ID");
+        setOpeningId(null);
+        return;
+      }
+      const res = await fetch(`/api/music/resolve?input=${encodeURIComponent(text)}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.id) {
+        setError(data.error || "链接解析失败，请改用歌单链接或歌单 ID");
+        setOpeningId(null);
+        return;
+      }
+      id = data.id as string;
     }
     setInput("");
     await handleOpen(id);
@@ -91,17 +108,17 @@ export default function MusicPage() {
         )}
       </section>
 
-      {/* 我导入的歌单（localStorage 持久化，可删除） */}
-      {customMetas.length > 0 && (
+      {/* 临时歌单（访客导入，仅本次会话有效） */}
+      {tempMetas.length > 0 && (
         <section className="mt-4">
           <h2 className="mb-2 text-sm font-semibold text-zinc-600 dark:text-zinc-300">
-            我的歌单
+            临时歌单
             <span className="ml-2 text-xs font-normal text-zinc-400">
-              {customMetas.length} 个 · 已保存在本设备
+              {tempMetas.length} 个 · 仅本次浏览有效，刷新后自动清空
             </span>
           </h2>
           <div className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {customMetas.map((m) => (
+            {tempMetas.map((m) => (
               <PlaylistCard
                 key={m.id}
                 meta={m}
@@ -126,7 +143,7 @@ export default function MusicPage() {
             setInput(e.target.value);
             if (error) setError("");
           }}
-          placeholder="粘贴网易云歌单 ID 或链接，打开后自动存入我的歌单"
+          placeholder="粘贴网易云歌单链接、ID，或 App 分享的整段文字"
           className="min-w-0 flex-1 border-none bg-transparent text-sm text-zinc-800 outline-none placeholder:text-zinc-400 dark:text-zinc-100 dark:placeholder:text-zinc-500"
         />
         <button
@@ -289,7 +306,7 @@ function PlaylistCard({
             onRemove();
           }}
           aria-label={`删除歌单 ${meta.name}`}
-          title="从我的歌单移除"
+          title="移除这个歌单"
           className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-zinc-800/80 text-white opacity-0 shadow-md backdrop-blur transition hover:bg-rose-500 focus:opacity-100 group-hover:opacity-100"
         >
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">

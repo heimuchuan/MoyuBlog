@@ -10,6 +10,8 @@ type Post = {
   content: string;
   excerpt: string;
   published: boolean;
+  /** 定时发布时间（ISO 字符串），为空表示不定时 */
+  publishAt?: string | null;
   categoryId: number | null;
   tags: string[];
 };
@@ -26,6 +28,15 @@ function plainTextToMarkdown(text: string): string {
     .join("\n\n");
 }
 
+/** ISO 时间 → datetime-local 输入框所需的本地时间字符串（YYYY-MM-DDTHH:mm） */
+function toLocalInput(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 const inputClass =
   "w-full rounded-xl border border-white/20 bg-white/60 px-3 py-2 outline-none focus:border-[#5d7a8a] focus:ring-1 focus:ring-[#5d7a8a]/30 dark:border-white/10 dark:bg-white/5";
 
@@ -39,7 +50,11 @@ export default function PostForm({
   const router = useRouter();
   const [title, setTitle] = useState(post?.title || "");
   const [content, setContent] = useState(post?.content || "");
-  const [published, setPublished] = useState(post?.published ?? false);
+  // 发布方式三态：草稿 / 立即发布 / 定时发布（定时到点前前台不可见）
+  const [mode, setMode] = useState<"draft" | "now" | "schedule">(
+    !post?.published ? "draft" : post.publishAt ? "schedule" : "now"
+  );
+  const [publishAt, setPublishAt] = useState(toLocalInput(post?.publishAt));
   const [categoryId, setCategoryId] = useState<number | "">(post?.categoryId ?? "");
   const [tagList, setTagList] = useState<string[]>(post?.tags || []);
   const [tagInput, setTagInput] = useState("");
@@ -81,13 +96,19 @@ export default function PostForm({
       setError("标题和内容不能为空");
       return;
     }
+    if (mode === "schedule" && !publishAt) {
+      setError("请选择定时发布时间");
+      return;
+    }
     setSaving(true);
     setError("");
     const payload = {
       title: title.trim(),
       content: plainTextToMarkdown(content), // 发布时自动转为 Markdown
       excerpt: post?.excerpt || "", // 表单不再填写摘要，编辑时保留原值
-      published,
+      published: mode !== "draft",
+      // datetime-local 无时区信息，new Date 按本地时间解析后再转 ISO 存库
+      publishAt: mode === "schedule" ? new Date(publishAt).toISOString() : null,
       categoryId: categoryId === "" ? null : categoryId,
       tags: tagList,
     };
@@ -231,14 +252,44 @@ export default function PostForm({
         <p className="mt-1 text-xs text-zinc-500">发布时自动转换为 Markdown 格式</p>
       </div>
 
-      <label className="flex items-center gap-2 text-sm">
-        <input
-          type="checkbox"
-          checked={published}
-          onChange={(e) => setPublished(e.target.checked)}
-        />
-        立即发布
-      </label>
+      <div>
+        <label className="mb-1 block text-sm font-medium">发布方式</label>
+        <div className="flex flex-wrap gap-2">
+          {(
+            [
+              { key: "draft", label: "草稿" },
+              { key: "now", label: "立即发布" },
+              { key: "schedule", label: "定时发布" },
+            ] as const
+          ).map((m) => (
+            <button
+              key={m.key}
+              type="button"
+              onClick={() => setMode(m.key)}
+              className={`rounded-full px-4 py-1.5 text-sm transition ${
+                mode === m.key
+                  ? "bg-[#5d7a8a] text-white"
+                  : "border border-black/10 text-zinc-600 hover:border-[#5d7a8a]/40 dark:border-white/10 dark:text-zinc-300"
+              }`}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+        {mode === "schedule" && (
+          <div className="mt-3">
+            <input
+              type="datetime-local"
+              value={publishAt}
+              onChange={(e) => setPublishAt(e.target.value)}
+              className={inputClass}
+            />
+            <p className="mt-1 text-xs text-zinc-500">
+              到点前前台不可见，后台列表会标记为「定时」
+            </p>
+          </div>
+        )}
+      </div>
 
       <div className="flex items-center gap-3">
         <button

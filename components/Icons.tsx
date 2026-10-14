@@ -1,6 +1,7 @@
 // 全站通用线条图标：stroke=currentColor，风格与导航栏 home 图标一致（描边 1.8、圆角）
 // 颜色由父元素 color 控制，明暗主题自动适配
-import type { ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
+import { Bird } from "lucide-react";
 
 type IconProps = { className?: string };
 
@@ -141,3 +142,44 @@ export function ShuffleIcon({ className }: IconProps) {
     </Svg>
   );
 }
+
+/** 链接（通用社交图标） */
+export function LinkIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+    </Svg>
+  );
+}
+
+/** 社交链接图标映射：key → 组件（后台管理与前台大屏共用） */
+export const SOCIAL_ICONS: Record<string, ComponentType<IconProps>> = {
+  github: GithubIcon,
+  mail: MailIcon,
+  globe: GlobeIcon,
+  link: LinkIcon,
+  bilibili: BilibiliIcon,
+  queyu: QueyuIcon,
+};
+
+/** bilibili（线条小电视：双天线 + 圆角机身 + 双竖眼） */
+export function BilibiliIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M8 3.5 10.5 7" />
+      <path d="M16 3.5 13.5 7" />
+      <rect width="19" height="12.5" x="2.5" y="7" rx="3" />
+      <path d="M8.5 12v2.5" />
+      <path d="M15.5 12v2.5" />
+    </Svg>
+  );
+}
+
+/** 雀语（线条小鸟，沿用 lucide bird 的 1.8 描边线条风格） */
+export function QueyuIcon({ className }: IconProps) {
+  return <Bird className={className ?? "h-4 w-4"} strokeWidth={1.8} aria-hidden />;
+}
+
+/** 社交图标合法 key 白名单（服务端校验用） */
+export const SOCIAL_ICON_KEYS = Object.keys(SOCIAL_ICONS);

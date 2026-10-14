@@ -30,6 +30,7 @@ export default async function EditPostPage({
             content: post.content,
             excerpt: post.excerpt || "",
             published: post.published,
+            publishAt: post.publishAt ? post.publishAt.toISOString() : null,
             categoryId: post.categoryId,
             tags: post.tags.map((t) => t.name),
           }}

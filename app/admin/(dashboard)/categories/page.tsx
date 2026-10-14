@@ -1,12 +1,20 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import AddCategoryForm from "@/components/admin/AddCategoryForm";
 import DeleteButton from "@/components/admin/DeleteButton";
 
+const getCategories = unstable_cache(
+  async () =>
+    prisma.category.findMany({
+      include: { _count: { select: { posts: true } } },
+      orderBy: { name: "asc" },
+    }),
+  ["admin-categories-list"],
+  { revalidate: 10 }
+);
+
 export default async function AdminCategories() {
-  const categories = await prisma.category.findMany({
-    include: { _count: { select: { posts: true } } },
-    orderBy: { name: "asc" },
-  });
+  const categories = await getCategories();
 
   return (
     <div>

@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getPostDetail } from "@/lib/public-data";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
+import BackButton from "@/components/BackButton";
 
 export default async function PostPage({
   params,
@@ -16,13 +19,17 @@ export default async function PostPage({
   } catch {
     // 非法编码序列时保留原值
   }
-  const post = await prisma.post.findUnique({
-    where: { slug },
-    include: { category: true, tags: true, author: { select: { name: true } } },
-  });
+  const post = await getPostDetail(slug);
   if (!post || !post.published) notFound();
+  // 定时发布：未到发布时间等同于不存在
+  if (post.publishAt && new Date(post.publishAt).getTime() > Date.now()) notFound();
 
-  await prisma.post.update({ where: { id: post.id }, data: { views: { increment: 1 } } });
+  // 浏览量 +1 放到响应后执行，不阻塞页面渲染（云端库写入慢）
+  after(async () => {
+    await prisma.post
+      .update({ where: { id: post.id }, data: { views: { increment: 1 } } })
+      .catch(() => {});
+  });
 
   const date = new Date(post.createdAt).toLocaleDateString("zh-CN", {
     year: "numeric",
@@ -33,21 +40,24 @@ export default async function PostPage({
   return (
     <article className="mx-auto w-full max-w-3xl px-4 py-10">
       <div className="glass rounded-3xl p-6 sm:p-10">
+      <div className="mb-5">
+        <BackButton />
+      </div>
       <h1 className="text-3xl font-bold tracking-tight">{post.title}</h1>
       <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-zinc-500">
-        <span>{post.author.name}</span>
+        <span>{post.authorName}</span>
         <span>·</span>
         <span>{date}</span>
         <span>·</span>
         <span>{post.views + 1} 次阅读</span>
-        {post.category && (
+        {post.categoryName && (
           <>
             <span>·</span>
             <Link
-              href={`/categories/${encodeURIComponent(post.category.name)}`}
+              href={`/categories/${encodeURIComponent(post.categoryName)}`}
               className="text-indigo-500 hover:underline"
             >
-              {post.category.name}
+              {post.categoryName}
             </Link>
           </>
         )}
@@ -55,8 +65,8 @@ export default async function PostPage({
       {post.tags.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2">
           {post.tags.map((t) => (
-            <span key={t.name} className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs dark:bg-zinc-800">
-              #{t.name}
+            <span key={t} className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs dark:bg-zinc-800">
+              #{t}
             </span>
           ))}
         </div>

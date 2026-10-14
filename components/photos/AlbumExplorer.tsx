@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { useSession } from "next-auth/react";
 import PolaroidWall, { type PolaroidPhoto } from "./PolaroidWall";
 
 export type ExplorerAlbum = {
   id: number | string;
   name: string;
+  /** 是否在首页照片卡展示（仅管理员可见与切换） */
+  featured?: boolean;
   /** 册内最新一张照片的 ISO 时间，作为封面日期 */
   date: string;
   /** 封面叠放照片（已按封面优先、最多 3 张排好） */
@@ -47,10 +50,14 @@ function AlbumCover({
   album,
   index,
   onOpen,
+  isAdmin = false,
+  onToggleFeatured,
 }: {
   album: ExplorerAlbum;
   index: number;
   onOpen: () => void;
+  isAdmin?: boolean;
+  onToggleFeatured?: () => void;
 }) {
   const n = Math.min(album.coverUrls.length, 3);
   const picks = SLOT_PICK[n] ?? [0, 1, 2];
@@ -79,8 +86,28 @@ function AlbumCover({
       whileHover="hover"
       whileTap={{ scale: 0.98 }}
       transition={{ type: "spring", stiffness: 320, damping: 22 }}
-      className="h-full will-change-transform"
+      className="relative h-full will-change-transform"
     >
+      {/* 管理员专属：首页展示开关（真相册才有，散落碎片不参与） */}
+      {isAdmin && album.id !== "unassigned" && onToggleFeatured && (
+        <button
+          type="button"
+          onClick={onToggleFeatured}
+          aria-label={album.featured ? "取消首页展示" : "设为首页展示"}
+          title={album.featured ? "已在首页照片卡展示，点击取消" : "展示到首页照片卡"}
+          className={`absolute right-3 top-3 z-40 flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-md transition ${
+            album.featured
+              ? "bg-violet-500 text-white shadow-md"
+              : "bg-white/70 text-zinc-500 hover:bg-white/90 hover:text-violet-600 dark:bg-white/15 dark:text-zinc-300 dark:hover:text-violet-300"
+          }`}
+        >
+          {album.featured ? (
+            <Eye className="h-4 w-4" strokeWidth={2} />
+          ) : (
+            <EyeOff className="h-4 w-4" strokeWidth={2} />
+          )}
+        </button>
+      )}
       <button
         type="button"
         onClick={onOpen}
@@ -137,13 +164,33 @@ function AlbumCover({
 }
 
 export default function AlbumExplorer({ albums }: { albums: ExplorerAlbum[] }) {
+  const [list, setList] = useState(albums);
   const [openId, setOpenId] = useState<number | string | null>(null);
-  const open = albums.find((a) => a.id === openId) ?? null;
+  const open = list.find((a) => a.id === openId) ?? null;
+  // 管理员由客户端 session 判断：页面可保持静态化，登录态加载后开关才出现
+  const { status } = useSession();
+  const isAdmin = status === "authenticated";
 
   // 翻开 / 返回时回到页面顶部，避免停在列表中段
   useEffect(() => {
     window.scrollTo({ top: 0 });
   }, [openId]);
+
+  // 管理员切换「首页展示」：即时更新本地状态，首页聚合由后台 revalidateTag 同步失效
+  async function toggleFeatured(album: ExplorerAlbum) {
+    const next = !album.featured;
+    const res = await fetch(`/api/albums/${album.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ featured: next }),
+    });
+    if (res.ok) {
+      setList((prev) => prev.map((a) => (a.id === album.id ? { ...a, featured: next } : a)));
+    } else {
+      const d = await res.json().catch(() => ({}));
+      window.alert(d.error || "操作失败");
+    }
+  }
 
   return (
     <AnimatePresence mode="wait" initial={false}>
@@ -188,14 +235,20 @@ export default function AlbumExplorer({ albums }: { albums: ExplorerAlbum[] }) {
           transition={{ duration: 0.3, ease: [0.2, 0.7, 0.3, 1] }}
           className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3"
         >
-          {albums.map((album, i) => (
+          {list.map((album, i) => (
             <motion.div
               key={album.id}
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: Math.min(i * 0.08, 0.6), duration: 0.45, ease: "easeOut" }}
             >
-              <AlbumCover album={album} index={i} onOpen={() => setOpenId(album.id)} />
+              <AlbumCover
+                album={album}
+                index={i}
+                onOpen={() => setOpenId(album.id)}
+                isAdmin={isAdmin}
+                onToggleFeatured={isAdmin ? () => toggleFeatured(album) : undefined}
+              />
             </motion.div>
           ))}
         </motion.div>

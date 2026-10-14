@@ -3,6 +3,9 @@ import { photoUrl } from "@/lib/photo-url";
 import { getPublicAlbums } from "@/lib/public-data";
 import type { PublicPhotoItem } from "@/lib/public-data";
 
+// 页面静态化：管理员判断已移至客户端 useSession，数据由 unstable_cache（tags: albums/photos）提供
+export const revalidate = 3600;
+
 // 册内照片按时间倒序展示，编号每册独立，从 001 开始
 function toPolaroids(photos: PublicPhotoItem[]) {
   return photos.map((p, i) => ({
@@ -39,7 +42,10 @@ export default async function PhotosPage() {
   const { albums, unassigned } = await getPublicAlbums();
 
   const explorerAlbums: ExplorerAlbum[] = [
-    ...albums.map((a) => buildAlbum(a.id, a.name, a.photos, a.coverPhotoId)),
+    ...albums.map((a) => ({
+      ...buildAlbum(a.id, a.name, a.photos, a.coverPhotoId),
+      featured: a.featured,
+    })),
     // 未归入任何相册的散片汇成一本系统相册
     ...(unassigned.length > 0 ? [buildAlbum("unassigned", "散落碎片", unassigned)] : []),
   ];

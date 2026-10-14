@@ -4,6 +4,7 @@ import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { usePageTransition } from "@/components/PageTransition";
 import {
   LayoutDashboard,
   FileText,
@@ -12,12 +13,19 @@ import {
   MessageSquareText,
   Wallet,
   BookOpen,
+  Quote,
+  MessagesSquare,
+  MessageCircleHeart,
+  MonitorSmartphone,
+  Music,
+  Settings,
   Home,
   LogOut,
   ChevronLeft,
   ChevronRight,
   Menu,
   X,
+  Blocks,
   type LucideIcon,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
@@ -28,8 +36,15 @@ const links: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/categories", label: "分类", icon: FolderTree },
   { href: "/admin/photos", label: "照片", icon: ImageIcon },
   { href: "/admin/talks", label: "说说", icon: MessageSquareText },
+  { href: "/admin/quotes", label: "金句", icon: Quote },
+  { href: "/admin/danmaku", label: "弹幕", icon: MessagesSquare },
+  { href: "/admin/showcase", label: "大屏", icon: MonitorSmartphone },
+  { href: "/admin/projects", label: "项目", icon: Blocks },
+  { href: "/admin/guestbook", label: "留言", icon: MessageCircleHeart },
+  { href: "/admin/music", label: "音乐", icon: Music },
   { href: "/admin/ledger", label: "记账", icon: Wallet },
   { href: "/admin/knowledge", label: "知识库", icon: BookOpen },
+  { href: "/admin/settings", label: "设置", icon: Settings },
 ];
 
 const COLLAPSE_KEY = "moyu_admin_sidebar_collapsed";
@@ -43,6 +58,7 @@ export default function AdminShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { end: endTransition } = usePageTransition();
   const [mounted, setMounted] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -51,6 +67,12 @@ export default function AdminShell({
     setMounted(true);
     setCollapsed(localStorage.getItem(COLLAPSE_KEY) === "1");
   }, []);
+
+  // 后台挂载完成后关闭前台→后台的转场遮罩
+  useEffect(() => {
+    const t = setTimeout(() => endTransition(), 100);
+    return () => clearTimeout(t);
+  }, [endTransition]);
 
   useEffect(() => {
     if (mounted) localStorage.setItem(COLLAPSE_KEY, collapsed ? "1" : "0");
@@ -66,10 +88,10 @@ export default function AdminShell({
 
   const sidebar = (
     <aside
-      className={`glass fixed bottom-3 right-3 top-3 z-50 flex flex-col rounded-2xl transition-all duration-300 ease-out
+      className={`glass fixed bottom-3 left-3 top-3 z-50 flex flex-col rounded-2xl transition-all duration-300 ease-out
         ${collapsed ? "w-[72px]" : "w-60"}
-        max-lg:bottom-0 max-lg:right-0 max-lg:top-0 max-lg:max-w-[80vw] max-lg:rounded-none
-        ${mobileOpen ? "max-lg:translate-x-0" : "max-lg:translate-x-[110%]"}
+        max-lg:bottom-0 max-lg:left-0 max-lg:top-0 max-lg:max-w-[80vw] max-lg:rounded-none
+        ${mobileOpen ? "max-lg:translate-x-0" : "max-lg:-translate-x-[110%]"}
       `}
     >
       {/* 顶部：标题 + 收起按钮 */}
@@ -87,9 +109,9 @@ export default function AdminShell({
           className="hidden rounded-lg p-1.5 text-zinc-500 transition-colors hover:bg-black/5 hover:text-[#5d7a8a] dark:hover:bg-white/10 lg:block"
         >
           {collapsed ? (
-            <ChevronLeft className="h-4 w-4" strokeWidth={1.8} />
-          ) : (
             <ChevronRight className="h-4 w-4" strokeWidth={1.8} />
+          ) : (
+            <ChevronLeft className="h-4 w-4" strokeWidth={1.8} />
           )}
         </button>
         <button
@@ -119,9 +141,9 @@ export default function AdminShell({
                     : "text-zinc-600 hover:bg-black/5 dark:text-zinc-300 dark:hover:bg-white/10"
                 }`}
             >
-              {/* 激活指示条：位于靠内容区一侧（左侧） */}
+              {/* 激活指示条：位于靠内容区一侧（右侧） */}
               {active && (
-                <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-[#5d7a8a]" />
+                <span className="absolute right-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-[#5d7a8a]" />
               )}
               <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.8} />
               {!collapsed && <span className="truncate">{l.label}</span>}
@@ -169,12 +191,12 @@ export default function AdminShell({
   );
 
   return (
-    <>
+    <div className="admin-scope">{/* admin-scope：globals.css 中后台日间可读性增强样式的作用域（仅日间生效） */}
       {/* 手机端菜单按钮 */}
       <button
         onClick={() => setMobileOpen(true)}
         aria-label="打开后台菜单"
-        className="glass fixed right-3 top-3 z-40 rounded-xl p-2.5 text-zinc-600 dark:text-zinc-300 lg:hidden"
+        className="glass fixed left-3 top-3 z-40 rounded-xl p-2.5 text-zinc-600 dark:text-zinc-300 lg:hidden"
       >
         <Menu className="h-5 w-5" strokeWidth={1.8} />
       </button>
@@ -191,11 +213,11 @@ export default function AdminShell({
 
       <main
         className={`min-h-screen px-4 pb-10 pt-6 transition-[padding] duration-300 ease-out
-          ${collapsed ? "lg:pl-4 lg:pr-[100px]" : "lg:pl-4 lg:pr-[264px]"}
+          ${collapsed ? "lg:pl-[100px] lg:pr-4" : "lg:pl-[264px] lg:pr-4"}
           max-lg:pt-16`}
       >
         <div className="mx-auto w-full max-w-5xl">{children}</div>
       </main>
-    </>
+    </div>
   );
 }

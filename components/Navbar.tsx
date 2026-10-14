@@ -6,6 +6,7 @@ import { useTheme } from "next-themes";
 import { useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { usePageTransition } from "./PageTransition";
 import {
   Home,
   FolderGit2,
@@ -33,25 +34,32 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
-  const { status } = useSession();
+  useSession();
+  const { start: startTransition } = usePageTransition();
   const [mounted, setMounted] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [ripple, setRipple] = useState<{ x: number; y: number; r: number; color: string; key: number } | null>(null);
   const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // logo 单击回首页、双击进后台（隐蔽入口：登录→/admin，未登录→/admin/login）
+  // logo：单击回首页，双击进后台（隐蔽入口）
+  // 用原生 dblclick 检测双击，比手动计时更可靠
   function handleLogoClick(e: React.MouseEvent<HTMLAnchorElement>) {
+    e.preventDefault();
+    clickTimer.current = setTimeout(() => {
+      clickTimer.current = null;
+      if (pathname !== "/") router.push("/");
+    }, 300);
+  }
+
+  function handleLogoDoubleClick(e: React.MouseEvent<HTMLAnchorElement>) {
     e.preventDefault();
     if (clickTimer.current) {
       clearTimeout(clickTimer.current);
       clickTimer.current = null;
-      router.push(status === "authenticated" ? "/admin" : "/admin/login");
-    } else {
-      clickTimer.current = setTimeout(() => {
-        clickTimer.current = null;
-        if (pathname !== "/") router.push("/");
-      }, 250);
     }
+    // 进后台：先拉起全屏转场遮罩，待遮罩淡入后再跳转
+    startTransition();
+    setTimeout(() => router.push("/admin"), 280);
   }
 
   function toggleTheme(e: React.MouseEvent<HTMLButtonElement>) {
@@ -91,6 +99,7 @@ export default function Navbar() {
         <Link
           href="/"
           onClick={handleLogoClick}
+          onDoubleClick={handleLogoDoubleClick}
           className="shrink-0 cursor-pointer truncate text-sm font-bold tracking-tight sm:text-base select-none"
         >
           <span className="sm:hidden">Relief</span>

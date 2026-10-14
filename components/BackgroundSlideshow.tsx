@@ -8,24 +8,29 @@ const IMAGES = [
 ];
 const INTERVAL = 5000; // 每 5 秒切换
 
-// 流动弹幕文案（随机分布在不同高度、不同速度）
-const DANMAKU = [
-  { text: "今天又没有更新！", top: "6%", dur: 18 },
-  { text: "你说你十连双金？", top: "18%", dur: 22 },
-  { text: "大家都觉得蕾缪安是美神！", top: "30%", dur: 26 },
-  { text: "歇会~", top: "42%", dur: 15 },
-  { text: "午饭吃什么？", top: "54%", dur: 19 },
-  { text: "嘻嘻/", top: "66%", dur: 14 },
-  { text: "无可奉告！是的，你还没问，不过不影响我的回答~", top: "78%", dur: 30 },
-  { text: "哎呀，问嘛，问嘛~", top: "90%", dur: 24 },
-];
+type DanmakuItem = { id: number; text: string; top: number; dur: number; active?: boolean };
 
 export default function BackgroundSlideshow() {
   const [index, setIndex] = useState(0);
+  const [danmaku, setDanmaku] = useState<DanmakuItem[]>([]);
 
   useEffect(() => {
     const timer = setInterval(() => setIndex((i) => (i + 1) % IMAGES.length), INTERVAL);
     return () => clearInterval(timer);
+  }, []);
+
+  // 从后台管理的弹幕接口拉取启用项（/api/danmaku 返回全部，前端过滤 active）
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/danmaku", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list: DanmakuItem[]) => {
+        if (!cancelled) setDanmaku(list.filter((d) => d.active));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -57,12 +62,12 @@ export default function BackgroundSlideshow() {
 
       {/* 流动弹幕 */}
       <div className="absolute inset-0 overflow-hidden">
-        {DANMAKU.map((d) => (
+        {danmaku.map((d) => (
           <span
-            key={d.text}
+            key={d.id}
             className="absolute whitespace-nowrap font-medium"
             style={{
-              top: d.top,
+              top: `${d.top}%`,
               fontSize: "13px",
               color: "var(--danmaku-color)",
               textShadow: "var(--danmaku-glow)",
