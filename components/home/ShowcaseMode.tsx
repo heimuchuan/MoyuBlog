@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿"use client";
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿"use client";
 
 import { AnimatePresence, motion, useMotionValue, useTransform, useSpring, useAnimationFrame } from "framer-motion";
 import {
@@ -245,8 +245,10 @@ function ShowcaseLayer({ onExit }: { onExit: () => void }) {
 
       {/* ── 内容层：桌面端严格一屏，移动端可滚动 ── */}
       <div className="relative flex min-h-[100dvh] flex-col px-5 pb-5 pt-8 sm:px-8 sm:pt-10 lg:px-10">
-        {/* ══ 顶部行：左 Hero 列（标题+搜索框，左对齐） ｜ 时间卡绝对定位不撑高行 ══ */}
-        <div className="relative flex items-start justify-between gap-4 xl:pl-96">
+        {/* ══ 顶部行：左 Hero 列（标题+搜索框，左对齐） ｜ 时间卡绝对定位不撑高行 ══
+            sm~xl 区间预留底部 padding：时间卡 absolute 高度约 480px，会溢出到下方金句区；
+            xl 以上金句区有 min-height 兜底自然错开，无需预留 */}
+        <div className="relative flex items-start justify-between gap-4 sm:max-xl:pb-60 xl:pl-96">
           {/* 左：Hero 列竖排，同一左对齐轴线；移动端顶部补小头像 */}
           <div className="flex min-w-0 flex-1 flex-col items-start gap-4 pt-1">
             <div className="inline-block rounded-full bg-gradient-to-br from-indigo-400 via-violet-400 to-purple-500 p-[3px] shadow-xl xl:hidden">
