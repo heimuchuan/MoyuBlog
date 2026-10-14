@@ -51,11 +51,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return { id: String(user.id), email: user.email, name: user.name };
       },
     }),
-    // 访客留言用的 GitHub 登录（未配置 AUTH_GITHUB_ID/SECRET 时按钮隐藏）
-    GitHub({
-      clientId: process.env.AUTH_GITHUB_ID,
-      clientSecret: process.env.AUTH_GITHUB_SECRET,
-    }),
+    // 访客留言用的 GitHub 登录（仅在配置了 AUTH_GITHUB_ID/SECRET 时启用，
+    // 否则缺参会导致整个 /api/auth/* 500，把账号密码登录也拖垮）
+    ...(process.env.AUTH_GITHUB_ID && process.env.AUTH_GITHUB_SECRET
+      ? [
+          GitHub({
+            clientId: process.env.AUTH_GITHUB_ID,
+            clientSecret: process.env.AUTH_GITHUB_SECRET,
+          }),
+        ]
+      : []),
   ],
   callbacks: {
     jwt({ token, account, profile }) {
