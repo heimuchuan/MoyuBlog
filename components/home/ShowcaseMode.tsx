@@ -265,13 +265,16 @@ function ShowcaseLayer({ onExit }: { onExit: () => void }) {
             >
               HI, I&apos;M RELIEF
             </motion.h1>
-            {/* 复合搜索框：与标题同左缘，宽约半屏 */}
+            {/* 复合搜索框：与标题同左缘，宽约半屏。
+                sm 起右侧预留 25rem（时间卡 24rem 宽 + 1rem 间距）：时间卡是绝对定位、
+                不占流，52vw 完全不知道它的存在，会给到卡片底下去重叠。
+                max-w 同步放宽 25rem，保证「可用空间够时仍是 52vw 半屏，不够时才收缩」 */}
             <motion.div
               variants={fadeUp}
               custom={2}
               initial="hidden"
               animate="show"
-              className="hidden w-full max-w-[52vw] sm:block"
+              className="hidden w-full max-w-[52vw] sm:block sm:pr-[25rem] sm:max-w-[calc(52vw_+_25rem)]"
             >
               <SearchBar />
             </motion.div>
@@ -450,14 +453,16 @@ function ShowcaseLayer({ onExit }: { onExit: () => void }) {
                 弹性撑满多余高度，让它与下方项目区维持当前的视觉间距；xl/2xl 再加一个 min-height 兜底：
                 当项目卡片增多、内容超过一屏时，金句区不被压缩，多余内容向下滚动（项目区只向下生长）。
                 兜底高度 = 一屏高 - 金句区以外的固定高度，其中卡片只按【一排】计——
-                多排时总高超过一屏，靠整页滚动而不是挤压金句区间距。 */}
+                多排时总高超过一屏，靠整页滚动而不是挤压金句区间距。
+                右侧 sm:pr-[25rem] + max-w 放宽 25rem 与上方搜索框完全一致：
+                两者必须保持同宽，同时避开绝对定位时间卡的横向占位。 */}
             <div className="flex flex-1 items-center py-4 xl:min-h-[calc(100dvh_-_31rem)] 2xl:min-h-[calc(100dvh_-_33rem)]">
               <motion.div
                 variants={fadeUp}
                 custom={3}
                 initial="hidden"
                 animate="show"
-                className="flex min-h-[3.5rem] w-full max-w-[52vw] items-center justify-center text-center"
+                className="flex min-h-[3.5rem] w-full max-w-[52vw] items-center justify-center text-center sm:pr-[25rem] sm:max-w-[calc(52vw_+_25rem)]"
               >
                 <TypewriterQuote
                   texts={quotes}
