@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { getPublicTalks } from "@/lib/public-data";
 
+// 数据由 unstable_cache 承担缓存；改为动态渲染，避免构建期查库
+export const dynamic = "force-dynamic";
+
 function formatTime(d: Date | string) {
   const date = new Date(d); // 缓存反序列化后 Date 会变成字符串
   const week = ["日", "一", "二", "三", "四", "五", "六"][date.getDay()];

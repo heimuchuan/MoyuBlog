@@ -5,6 +5,8 @@ import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { removeUpload, saveUpload } from "@/lib/upload-storage";
 
+export const dynamic = "force-dynamic";
+
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "photos");
 const TYPE_EXT: Record<string, string> = {
   "image/jpeg": "jpg",

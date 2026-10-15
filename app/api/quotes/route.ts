@@ -3,6 +3,8 @@ import { revalidateTag } from "next/cache";
 import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 const MAX_LEN = 200;
 
 // 列出金句（公开：仅 active；管理员：全部，带 active 标记）

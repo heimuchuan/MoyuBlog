@@ -4,6 +4,8 @@ import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SOCIAL_ICON_KEYS } from "@/components/Icons";
 
+export const dynamic = "force-dynamic";
+
 const MAX_LABEL = 30;
 const HREF_RE = /^(https?:\/\/|mailto:)/i;
 

@@ -9,6 +9,8 @@ import {
   resolvePlaylistIdFromShortLink,
 } from "@/lib/music-server";
 
+export const dynamic = "force-dynamic";
+
 const orderBy = [{ isDefault: "desc" as const }, { order: "asc" as const }, { id: "asc" as const }];
 
 // 列出全部歌单（前台只用 active 的，管理员需要全部）

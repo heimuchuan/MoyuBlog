@@ -3,8 +3,8 @@ import { photoUrl } from "@/lib/photo-url";
 import { getPublicAlbums } from "@/lib/public-data";
 import type { PublicPhotoItem } from "@/lib/public-data";
 
-// 页面静态化：管理员判断已移至客户端 useSession，数据由 unstable_cache（tags: albums/photos）提供
-export const revalidate = 3600;
+// 管理员判断在客户端 useSession 处理，数据由 unstable_cache（tags: albums/photos）提供；页面改为动态渲染，避免构建期查库
+export const dynamic = "force-dynamic";
 
 // 册内照片按时间倒序展示，编号每册独立，从 001 开始
 function toPolaroids(photos: PublicPhotoItem[]) {

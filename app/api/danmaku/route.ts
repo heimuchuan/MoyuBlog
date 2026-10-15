@@ -3,6 +3,8 @@ import { revalidateTag } from "next/cache";
 import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 const MAX_LEN = 100;
 
 // 列出所有弹幕（后台用，含停用项）

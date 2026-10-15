@@ -3,6 +3,8 @@ import { revalidateTag, unstable_cache } from "next/cache";
 import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 // 列出所有分类（公开：前台筛选用；后台管理用）；走 tag 缓存
 const getCategoriesCached = unstable_cache(
   async () =>

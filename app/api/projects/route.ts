@@ -3,6 +3,8 @@ import { revalidateTag, unstable_cache } from "next/cache";
 import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 const TYPE_EXT: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",

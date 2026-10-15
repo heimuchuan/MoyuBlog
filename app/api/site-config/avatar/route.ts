@@ -7,6 +7,8 @@ import { removeUpload, saveUpload } from "@/lib/upload-storage";
 import { avatarUrl } from "@/lib/photo-url";
 import { getSiteAvatar } from "@/lib/public-data";
 
+export const dynamic = "force-dynamic";
+
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "avatar");
 const TYPE_EXT: Record<string, string> = {
   "image/jpeg": "jpg",

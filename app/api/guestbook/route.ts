@@ -4,6 +4,8 @@ import { getVisitorSession } from "@/lib/auth";
 import { getGuestbookMessages } from "@/lib/public-data";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 const NAME_MAX = 20;
 const CONTENT_MAX = 200;
 
