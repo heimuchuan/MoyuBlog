@@ -91,41 +91,59 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 });
 
 /**
- * 后台接口鉴权：仅放行 role=admin 的会话。
- * NextAuth 的 auth() 在 Next.js 16 API 路由中无法正确读取 cookie，
- * 此函数直接从 req.headers 解析 JWT cookie 并解密。
+ * 判断会话 cookie 是否带 __Secure- 前缀。
+ * Auth.js 依据请求是否走 HTTPS 决定 cookie 名，与 AUTH_URL 是否配置无关，
+ * 因此按请求协议推断（Vercel 上 AUTH_URL 通常为空，只看 AUTH_URL 会导致读不到 cookie）。
  */
-export async function getAuthSession(req: Request) {
+function isSecureRequest(req: Request) {
+  const proto = req.headers.get("x-forwarded-proto");
+  if (proto) return proto.split(",")[0].trim() === "https";
+  try {
+    return new URL(req.url).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 从请求头解析并解密 JWT cookie。
+ * 先按推断出的前缀读取，读不到再试另一种前缀兜底（本地 http / 线上 https 都能取到）。
+ */
+async function readSessionToken(req: Request) {
   const secret = process.env.AUTH_SECRET;
   if (!secret) return null;
-  const secureCookie = process.env.AUTH_URL?.startsWith("https://") ?? false;
+  const secure = isSecureRequest(req);
   try {
-    const token = await getToken({ req, secret, secureCookie });
-    if (!token?.sub || token.role !== "admin") return null;
-    return { user: { id: token.sub } };
+    const token = await getToken({ req, secret, secureCookie: secure });
+    if (token) return token;
+    return await getToken({ req, secret, secureCookie: !secure });
   } catch {
     return null;
   }
 }
 
+/**
+ * 后台接口鉴权：仅放行 role=admin 的会话。
+ * NextAuth 的 auth() 在 Next.js 16 API 路由中无法正确读取 cookie，
+ * 此函数直接从 req.headers 解析 JWT cookie 并解密。
+ */
+export async function getAuthSession(req: Request) {
+  const token = await readSessionToken(req);
+  if (!token?.sub || token.role !== "admin") return null;
+  return { user: { id: token.sub } };
+}
+
 /** 前台访客会话（GitHub 登录留言用，匿名访客返回 null） */
 export async function getVisitorSession(req: Request) {
-  const secret = process.env.AUTH_SECRET;
-  if (!secret) return null;
-  const secureCookie = process.env.AUTH_URL?.startsWith("https://") ?? false;
-  try {
-    const token = await getToken({ req, secret, secureCookie });
-    if (!token?.sub) return null;
-    return {
-      user: {
-        id: token.sub,
-        role: token.role ?? "visitor",
-        name: token.ghName ?? token.name ?? null,
-        avatarUrl: token.ghAvatar ?? null,
-        githubLogin: token.ghLogin ?? null,
-      },
-    };
-  } catch {
-    return null;
-  }
+  const token = await readSessionToken(req);
+  if (!token?.sub) return null;
+  return {
+    user: {
+      id: token.sub,
+      role: token.role ?? "visitor",
+      name: token.ghName ?? token.name ?? null,
+      avatarUrl: token.ghAvatar ?? null,
+      githubLogin: token.ghLogin ?? null,
+    },
+  };
 }
